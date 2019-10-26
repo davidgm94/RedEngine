@@ -436,7 +436,10 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
     createInfo.flags = 0;
     createInfo.queueCreateInfoCount = queueCount;
 	createInfo.pQueueCreateInfos = queues;
-	createInfo.enabledLayerCount = ArrayCount(enabledLayers); createInfo.ppEnabledLayerNames = enabledLayers; createInfo.enabledExtensionCount = ArrayCount(enabledExtensions); createInfo.ppEnabledExtensionNames = enabledExtensions;
+	createInfo.enabledLayerCount = ArrayCount(enabledLayers); 
+	createInfo.ppEnabledLayerNames = enabledLayers;
+	createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);
+	createInfo.ppEnabledExtensionNames = enabledExtensions;
 	createInfo.pEnabledFeatures = &swapchainProperties->features;
 
     VkDevice device = nullptr;
