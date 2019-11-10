@@ -87,11 +87,14 @@ enum Vk_QueueFamilyIndex
     VULKAN_QUEUE_FAMILY_INDEX_TRANSFER,
 };
 
+#if VK_USE_PLATFORM_WIN32_KHR
 typedef struct win32_os_vk_surface
 {
     HINSTANCE instance;
     HWND window;
 } win32_os_vk_surface;
+#else
+#endif
 
 typedef struct
 {
@@ -156,17 +159,18 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
 #else
 #endif
 
-	const char* enabledLayers[] =
-    {
+	//const char* enabledLayers[] =
+    //{
+		
 #if _DEBUG
-	  VK_KHR_VALIDATION_LAYER_NAME,
+	  //VK_KHR_VALIDATION_LAYER_NAME,
 #endif // _DEBUG
-    };
+    //};
     const char* enabledExtensions[] =
     {
 	   VK_KHR_SURFACE_EXTENSION_NAME,
 #if _DEBUG
-	   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+	   //VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 #endif
 #if VK_USE_PLATFORM_WIN32_KHR
 	   VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
@@ -179,10 +183,10 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
     createInfo.pNext = nullptr;
     createInfo.flags = 0;
     createInfo.pApplicationInfo = &applicationInfo;
-    createInfo.enabledLayerCount = ArrayCount(enabledLayers);
-    createInfo.ppEnabledLayerNames = enabledLayers;
-    createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);
-    createInfo.ppEnabledExtensionNames = enabledExtensions;
+    createInfo.enabledLayerCount = 0;//ArrayCount(enabledLayers);
+	createInfo.ppEnabledLayerNames = 0;//enabledLayers;
+	createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);//ArrayCount(enabledExtensions);
+	createInfo.ppEnabledExtensionNames = enabledExtensions; // enabledExtensions;
 
     VkInstance instance;
 	VKCHECK(vkCreateInstance(&createInfo, allocator, &instance));
@@ -418,26 +422,35 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
 	float defaultQueuePriorities[] = { 1.0f };
 	vk_setupQueueCreation(queues, &swapchainProperties->queueFamily, VK_QUEUE_GRAPHICS_BIT, defaultQueuePriorities);
 
-    const char* enabledLayers[] =
-    {
-#if _DEBUG
-		VK_KHR_VALIDATION_LAYER_NAME,
-#endif // _DEBUG
-    };
+    //const char* enabledLayers[] =
+    //{
+////#if _DEBUG
+		//VK_KHR_VALIDATION_LAYER_NAME,
+//#endif // _DEBUG
+    //};
 
     const char* enabledExtensions[] =
 	{	 
 	   VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
+	VkDeviceQueueCreateInfo queueCreateInfo;
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.pNext = 0;
+	const float priority[] = { 1.0f };
+	queueCreateInfo.pQueuePriorities = priority;
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.queueFamilyIndex = 0;
+	queueCreateInfo.flags = 0;
+
 	VkDeviceCreateInfo createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pNext = nullptr;
     createInfo.flags = 0;
-    createInfo.queueCreateInfoCount = queueCount;
-	createInfo.pQueueCreateInfos = queues;
-	createInfo.enabledLayerCount = ArrayCount(enabledLayers); 
-	createInfo.ppEnabledLayerNames = enabledLayers;
+    createInfo.queueCreateInfoCount = 1;
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.enabledLayerCount = 0; 
+	createInfo.ppEnabledLayerNames = 0;
 	createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);
 	createInfo.ppEnabledExtensionNames = enabledExtensions;
 	createInfo.pEnabledFeatures = &swapchainProperties->features;
@@ -495,13 +508,17 @@ static inline VkSurfaceKHR vk_createSurface(VkAllocationCallbacks* allocator, Vk
     createInfo.flags = 0;
     createInfo.hinstance = window->anotherOSHandle;
     createInfo.hwnd = window->windowHandle;
-    
+
+        VkSurfaceKHR surface;
+    VKCHECK(vkCreateWin32SurfaceKHR(instance, &createInfo, allocator, &surface));
+
 #else
-#pragma error platform not supported yet
+#include <GLFW/glfw3.h>
+    VkSurfaceKHR surface;
+    GLFWwindow* window2 = null;
+    glfwCreateWindowSurface(instance, window2, allocator, &surface);
 #endif
 
-    VkSurfaceKHR surface;
-    VKCHECK(vkCreateWin32SurfaceKHR(instance, &createInfo, allocator, &surface));
 
     return surface;
 }
@@ -1371,10 +1388,11 @@ void vk_load(vulkan_renderer* vk, platform_dependencies* window)
 		VK_DEBUG_REPORT_ERROR_BIT_EXT |
 		VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 		
-    vk->debugCallback = vk_createDebugCallback(allocator, vk->instance, debugCallbackFlags, vk_debugCallback);
+    //vk->debugCallback = vk_createDebugCallback(allocator, vk->instance, debugCallbackFlags, vk_debugCallback);
 #endif
     vk->physicalDevice = vk_pickPhysicalDevice(vk->instance);
-    vk->surface = vk_createSurface(allocator, vk->instance, window);
+	
+     vk->surface = vk_createSurface(allocator, vk->instance, window);
     vk_fillSwapchainProperties(&vk->swapchainProperties, vk->physicalDevice, vk->surface);
     vk->device = vk_createDevice(allocator, vk->physicalDevice, &vk->swapchainProperties, queuesToCreate, availableQueueCount);
 //	vk_getQueues(vk->queues, vk->device, &vk->swapchainProperties.queueFamily);

@@ -4,3 +4,6 @@
 
 /.vs/RedEngine/v16
 /build
+/.idea
+/cmake-build-debug
+/cmake-build-release

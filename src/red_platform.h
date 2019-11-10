@@ -1,21 +1,26 @@
 #pragma once
 #include "red_common.h"
 
-#if _DEBUG
-
-#define inline inline
-
-#else
-
 #define FORCE_INLINE 1
+
+#if _MSC_VER
 #if FORCE_INLINE
 #define inline __forceinline
 #else
 #define inline inline
 #endif
 
+#elif __GNUC__
+#if FORCE_INLINE
+#define inline inline __attribute__((always_inline))
+#else
+#define inline inline
 #endif
 
+#endif
+
+#define CompletePastWritesBeforeFutureWrites _WriteBarrier(); _mm_sfence()
+#define CompletePastReadsBeforeFutureReads _ReadBarrier()
 enum counter_type
 {
 	DebugCycleCount,
@@ -235,13 +240,13 @@ PLATFORM_DEBUG_COUNTER(platform_DebugCounter);
 #define DEBUG_COUNTER(string, counter)
 #endif
 
-#if _DEBUG
+#if NDEBUG
+#define red_assert(condition)
+#else
 #define red_assert(condition) if (!(condition)) { platform_DebugInfo("[ASSERT FAILED] The expression " #condition " is false\n"); platform_DebugBreak(); }
 #define msg_red_assert(condition, message) if (!(condition)) { platform_DebugInfo("[ASSERT FAILED] The expression " #condition " is false\n[LOCATION] " #message "\n\n"); platform_DebugBreak(); }
-
-#else
-#define red_assert(condition)
 #endif
+
 #define assert(condition) red_assert(condition)
 #define msg_assert(condition, message) msg_red_assert(condition, message)
 #define invalid_code_path assert(!"Invalid code path")
@@ -288,6 +293,9 @@ typedef PLATFORM_IS_RUNNING(platform_is_running);
 // TODO: maybe this is wrong and offers poor portability? check in the future
 #define PLATFORM_HANDLE_EVENTS(name) void name(void* platform)
 typedef PLATFORM_HANDLE_EVENTS(platform_handle_events);
+
+#define PLATFORM_GET_LOGICAL_CORE_COUNT(name) u32 name(void)
+typedef PLATFORM_GET_LOGICAL_CORE_COUNT(platform_get_logical_core_count);
 
 typedef struct
 {
