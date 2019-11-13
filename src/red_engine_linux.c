@@ -7,10 +7,16 @@ int main()
     char* message = "hello";
     char buffer[100];
     int i = 5;
-    i32 start = getSystemMiliseconds();
+    i64 start = getSystemNanoseconds();
     for (int i = 0;  i < 10; i++)
         platform_createThread(foo, &i);
-    i32 end = getSystemMiliseconds();
+    int* array = platform_alloc(5);
+    for (int i =0; i < 5; i++)
+    {
+        array[i] = 5;
+        printf("%d\n", array[i]);
+    }
+    i64 end = getSystemNanoseconds();
     u64 timeElapsed = end - start;
-    printf("%llu ms", timeElapsed);
+    printf("%llu ns", timeElapsed);
 }

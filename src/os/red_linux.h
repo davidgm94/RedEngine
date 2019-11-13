@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <time.h>
 #include "linux/args.h"
+
+#include <sys/mman.h>
+
 int platform_Sprintf(char* buffer, const char* format, ...)
 {
     va_list args;
@@ -60,7 +63,7 @@ void logger(LOGGER_LEVEL loggerLevel, const char* tag, const char* message)
 }
 #include <math.h>
 
-static inline i32 getSystemMiliseconds()
+static inline struct timespec getUnixTimespec()
 {
     struct timespec ts;
     int result = clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -68,13 +71,38 @@ static inline i32 getSystemMiliseconds()
     {
         logger(ERROR, "[CLOCK]", "Error getting the clock from system");
     }
+    return ts;
+}
+static inline i32 getSystemMiliseconds()
+{
+    struct timespec ts = getUnixTimespec();
+
     i32 seconds = ts.tv_sec;
     i32 nanoSeconds = ts.tv_nsec;
     i32 milliSeconds = 1000 * seconds + /*round*/((double)nanoSeconds / 1.0e6);
     return milliSeconds;
 }
 
+static inline i64 getSystemNanoseconds()
+{
+    struct timespec ts = getUnixTimespec();
+    i64 seconds = ts.tv_sec;
+    i64 nanoSeconds = ts.tv_nsec;
+
+    nanoSeconds += seconds * 10e9;
+    return nanoSeconds;
+}
 void platform_DebugInfo(const char* message)
 {
    puts(message);
 }
+
+void* platform_alloc(size_t size)
+{
+    i64 start = getSystemNanoseconds();
+    void* memory = mmap(null, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -2, 0);
+    i64 end = getSystemNanoseconds();
+    printf("Allocation of %zu bytes took %llu ns.\n", size, end - start);
+    return memory;
+}
+
