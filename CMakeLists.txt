@@ -27,7 +27,7 @@ add_executable(RedEngine
         src/red_platform.c
         src/red_platform.h
         src/os/red_win32.c
-        src/os/red_win32.h src/os/red_linux.h src/red_engine_linux.c src/os/linux/args.h)
+        src/os/red_win32.h src/os/red_linux.h src/red_engine_linux.c src/os/linux/args.h src/os/linux/timer.h)
 
 target_link_libraries(RedEngine vulkan)
 target_link_libraries(RedEngine glfw)

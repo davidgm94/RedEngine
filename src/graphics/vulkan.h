@@ -57,7 +57,7 @@ platform_DebugInfo(buffer); break; }
 #undef PRINT_VKRESULT
 }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #define VKCHECK(call)								\
 {												\
     VkResult result_ = call; 						\
@@ -65,7 +65,7 @@ platform_DebugInfo(buffer); break; }
     {										 \
 	   printVkResult(result_, __FILE__, __LINE__);					\
     }										 \
-	msg_assert(result_ == VK_SUCCESS, call);				\
+	//msg_assert(result_ == VK_SUCCESS, call);				\
 }
 #else
 #define VKCHECK(call) (call)
@@ -141,11 +141,12 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
     applicationInfo.applicationVersion = 1;
     applicationInfo.pEngineName = "Red";
     applicationInfo.engineVersion = 1;
-    applicationInfo.apiVersion = VK_API_VERSION_1_1;
+    applicationInfo.apiVersion = 0;
 	    
 #if 1
-    u32 instanceLayerCount = 0;
-    VKCHECK(vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr));
+    u32 instanceLayerCount;
+    VkLayerProperties instanceLayerProperties;
+    VKCHECK(vkEnumerateInstanceLayerProperties(&instanceLayerCount, &instanceLayerProperties));
     assert(instanceLayerCount > 0);
 
     VkLayerProperties instanceLayers[instanceLayerCount];
@@ -278,7 +279,7 @@ static inline VkDebugReportCallbackEXT vk_createDebugCallback(VkAllocationCallba
 }
 #endif
 
-static const char* vulkan_physicalDeviceTypeString(VkPhysicalDeviceType type)
+static const char* vk_physicalDeviceTypeString(VkPhysicalDeviceType type)
 {
 	switch (type)
 	{
@@ -311,7 +312,7 @@ static inline VkPhysicalDevice vk_pickPhysicalDevice(VkInstance instance)
 		vkGetPhysicalDeviceFeatures(physicalDevices[i], &features[i]);
 
 		platform_Printf("Device %u: %s\n", i, properties[i].deviceName);
-		platform_Printf("\tType: %s\n", vulkan_physicalDeviceTypeString(properties[i].deviceType));
+		platform_Printf("\tType: %s\n", vk_physicalDeviceTypeString(properties[i].deviceType));
 		platform_Printf("\tAPI: %u.%u.%u\n",
 			VK_VERSION_MAJOR(properties[i].apiVersion),
 			VK_VERSION_MINOR(properties[i].apiVersion),

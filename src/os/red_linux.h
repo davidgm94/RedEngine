@@ -4,13 +4,26 @@
 #pragma once
 #include "red_common.h"
 #include "red_platform.h"
-
-
 #include <stdio.h>
 #include <time.h>
 #include "linux/args.h"
 
 #include <sys/mman.h>
+#include <signal.h>
+void platform_DebugBreak(void)
+{
+    raise(SIGTRAP);
+}
+
+int platform_Printf(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int result = vfprintf(stdout, format, args);
+    va_end(args);
+
+    return result;
+}
 
 int platform_Sprintf(char* buffer, const char* format, ...)
 {
@@ -20,6 +33,11 @@ int platform_Sprintf(char* buffer, const char* format, ...)
     int result = vsprintf(buffer, format, args);
     va_end(args);
     return result;
+}
+#include <string.h>
+void* platform_Memcpy(void* destination, void* source, size_t size)
+{
+    return memcpy(destination, source, size);
 }
 
 #include <pthread.h>
@@ -62,7 +80,7 @@ void logger(LOGGER_LEVEL loggerLevel, const char* tag, const char* message)
     puts(message);
 }
 #include <math.h>
-
+#include "linux/timer.h"
 static inline struct timespec getUnixTimespec()
 {
     struct timespec ts;
