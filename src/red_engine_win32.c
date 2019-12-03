@@ -5,7 +5,7 @@
 #define WINDOW_TITLE "Red Engine"
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 576
-#define TEST 0
+#define TEST 1
 
 const u32 initialWidth = WINDOW_WIDTH;
 const u32 initialHeight = WINDOW_HEIGHT;

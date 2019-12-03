@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(NAME RedEngine)
 project(RedEngine C)
 
 include_directories(src)
@@ -28,7 +30,25 @@ add_executable(RedEngine
         src/red_platform.h
         src/os/red_win32.c
         src/os/red_win32.h src/os/red_linux.h src/red_engine_linux.c src/os/linux/args.h src/os/linux/timer.h)
+# Sascha
+if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
+	message(STATUS "Using module to find Vulkan")
+	find_package(Vulkan)
+endif()
 
+IF(WIN32)
+	IF (NOT Vulkan_FOUND)
+		find_library(Vulkan_LIBRARY NAMES vulkan-1 vulkan PATHS ${CMAKE_SOURCE_DIR}/libs/vulkan)
+		IF (Vulkan_LIBRARY)
+			set(Vulkan_FOUND ON)
+			MESSAGE("Using bundled Vulkan library version")
+		ENDIF()
+ENDIF()
+ENDIF(WIN32)
+target_include_directories(RedEngine PRIVATE ${Vulkan_INCLUDE_DIRS})
+# mine
+# cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
+# find_package(Vulkan REQUIRED)
 target_link_libraries(RedEngine vulkan)
 target_link_libraries(RedEngine glfw)
 target_link_libraries(RedEngine dl)

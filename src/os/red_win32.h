@@ -1,7 +1,8 @@
 #pragma once
 #if _WIN64
-#include "red_common.h"
-#include "red_platform.h"
+#define _CRT_SECURE_NO_WARNINGS 1
+#include "../red_common.h"
+#include "../red_platform.h"
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 // TODO: erase in the future

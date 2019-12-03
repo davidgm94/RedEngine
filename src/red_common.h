@@ -3,6 +3,14 @@
 extern "C"
 {
 #endif
+#if _WIN64
+#if _DEBUG
+#define NDEBUG 0
+#else
+#define NDEBUG 1
+#endif
+#else
+#endif
 
 #include <stdint.h>
 #define MEASURE_PERFORMANCE 1

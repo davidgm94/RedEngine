@@ -1,6 +1,7 @@
 //
 // Created by david on 11/5/19.
 //
+#if __linux__JSDK
 #include "red_os.h"
 #include "red_graphics.h"
 #include <GLFW/glfw3.h>
@@ -59,4 +60,5 @@ int main()
 
     return 0;
 }
+#endif
 #endif

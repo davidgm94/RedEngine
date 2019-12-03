@@ -1,7 +1,7 @@
 #pragma once
 #include "red_common.h"
 
-#define FORCE_INLINE 1
+#define FORCE_INLINE 0
 
 #if _MSC_VER
 #if FORCE_INLINE
