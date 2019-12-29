@@ -2,8 +2,11 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/RedEngine/v16
+..*
+/.vs*
+/x64
 /build
+/out
 /.idea/
 /cmake-build-debug
 /cmake-build-release

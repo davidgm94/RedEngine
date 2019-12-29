@@ -1,82 +1,10 @@
-#pragma once
-#if 1
 #include <volk.h>
-#include "../red_os.h"
-#ifndef VK_KHR_VALIDATION_LAYER_NAME
-#define VK_KHR_VALIDATION_LAYER_NAME "VK_LAYER_KHRONOS_validation"
-#endif
-
-static inline void printVkResult(VkResult result, const char* file, int line)
-{
-#define PRINT_VKRESULT(resultType)\
-case (resultType): { char buffer[256];\
-platform_Sprintf(buffer, "[VKRESULT] %s in file: %s, line: %i.\n", #resultType, file, line); \
-platform_DebugInfo(buffer); break; }
-    switch (result)
-    {
-		PRINT_VKRESULT(VK_SUCCESS)
-		PRINT_VKRESULT(VK_NOT_READY)
-		PRINT_VKRESULT(VK_TIMEOUT)
-		PRINT_VKRESULT(VK_EVENT_SET)
-		PRINT_VKRESULT(VK_EVENT_RESET)
-		PRINT_VKRESULT(VK_INCOMPLETE)
-		PRINT_VKRESULT(VK_ERROR_OUT_OF_HOST_MEMORY)
-		PRINT_VKRESULT(VK_ERROR_OUT_OF_DEVICE_MEMORY)
-		PRINT_VKRESULT(VK_ERROR_INITIALIZATION_FAILED)
-		PRINT_VKRESULT(VK_ERROR_DEVICE_LOST)
-		PRINT_VKRESULT(VK_ERROR_MEMORY_MAP_FAILED)
-		PRINT_VKRESULT(VK_ERROR_LAYER_NOT_PRESENT)
-		PRINT_VKRESULT(VK_ERROR_EXTENSION_NOT_PRESENT)
-		PRINT_VKRESULT(VK_ERROR_FEATURE_NOT_PRESENT)
-		PRINT_VKRESULT(VK_ERROR_INCOMPATIBLE_DRIVER)
-		PRINT_VKRESULT(VK_ERROR_TOO_MANY_OBJECTS)
-		PRINT_VKRESULT(VK_ERROR_FORMAT_NOT_SUPPORTED)
-		PRINT_VKRESULT(VK_ERROR_FRAGMENTED_POOL)
-		PRINT_VKRESULT(VK_ERROR_OUT_OF_POOL_MEMORY)
-		PRINT_VKRESULT(VK_ERROR_INVALID_EXTERNAL_HANDLE)
-		PRINT_VKRESULT(VK_ERROR_SURFACE_LOST_KHR)
-		PRINT_VKRESULT(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR)
-		PRINT_VKRESULT(VK_SUBOPTIMAL_KHR)
-		PRINT_VKRESULT(VK_ERROR_OUT_OF_DATE_KHR)
-		PRINT_VKRESULT(VK_ERROR_INCOMPATIBLE_DISPLAY_KHR)
-		PRINT_VKRESULT(VK_ERROR_VALIDATION_FAILED_EXT)
-		PRINT_VKRESULT(VK_ERROR_INVALID_SHADER_NV)
-		PRINT_VKRESULT(VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT)
-		PRINT_VKRESULT(VK_ERROR_FRAGMENTATION_EXT)
-		PRINT_VKRESULT(VK_ERROR_NOT_PERMITTED_EXT)
-		PRINT_VKRESULT(VK_ERROR_INVALID_DEVICE_ADDRESS_EXT)
-		PRINT_VKRESULT(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT)
-		//PRINT_VKRESULT(VK_ERROR_OUT_OF_POOL_MEMORY_KHR)	    // repeated
-		//PRINT_VKRESULT(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR) // repeated
-		// PRINT_VKRESULT(VK_RESULT_BEGIN_RANGE)
-		//PRINT_VKRESULT(VK_RESULT_END_RANGE)
-		PRINT_VKRESULT(VK_RESULT_RANGE_SIZE)
-		PRINT_VKRESULT(VK_RESULT_MAX_ENUM)
-
-		invalid_default_case;
-    }
-#undef PRINT_VKRESULT
-}
-
-#if NDEBUG == 0
-#define VKCHECK(call)								\
-do {												\
-    VkResult result_ = call; 						\
-    if (result_ != VK_SUCCESS)						\
-	   printVkResult(result_, __FILE__, __LINE__);					\
+#define VKCHECK(result)\
+do {\
+	VkResult result___ = result;\
+	assert(result___ == VK_SUCCESS);\
 } while (0)
-#else
-#define VKCHECK(call) (call)
-#endif
 
-// TODO: WARNING: Magical constants to make development easier. Modify later
-#define QUEUE_FAMILY_PROPERTY_COUNT 34
-#define QUEUE_FAMILY_INDEX_COUNT 3
-#define SURFACE_FORMAT_COUNT 2
-#define PRESENT_MODE_COUNT 3
-#define IMAGE_COUNT 3
-
-typedef uint queue_family_indices[QUEUE_FAMILY_INDEX_COUNT];
 
 enum Vk_QueueFamilyIndex
 {
@@ -85,50 +13,7 @@ enum Vk_QueueFamilyIndex
     VULKAN_QUEUE_FAMILY_INDEX_TRANSFER,
 };
 
-#if VK_USE_PLATFORM_WIN32_KHR
-typedef struct win32_os_vk_surface
-{
-    HINSTANCE instance;
-    HWND window;
-} win32_os_vk_surface;
-#else
-#endif
-
-typedef struct
-{
-    VkQueueFamilyProperties properties[QUEUE_FAMILY_PROPERTY_COUNT];
-    size_t propertyCount;
-    queue_family_indices indices;
-} queue_family;
-
-typedef struct
-{
-    queue_family queueFamily;
-    VkPhysicalDeviceFeatures features;
-    VkPhysicalDeviceMemoryProperties memoryProperties;
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    VkSurfaceFormatKHR surfaceFormats[SURFACE_FORMAT_COUNT];
-	VkPresentModeKHR presentModes[PRESENT_MODE_COUNT];
-} swapchain_properties;
-
-typedef struct
-{
-    VkAllocationCallbacks allocator;
-    VkInstance instance;
-#if _DEBUG
-    VkDebugReportCallbackEXT debugCallback;
-#endif
-    swapchain_properties swapchainProperties;
-    VkPhysicalDevice physicalDevice;
-    VkDevice device;
-	VkQueue queues[QUEUE_FAMILY_INDEX_COUNT];
-    VkSurfaceKHR surface;
-    VkSwapchainKHR swapchain;
-	VkImage swapchainImages[IMAGE_COUNT];
-	VkCommandPool commandPool;
-	VkCommandBuffer commandBuffers[IMAGE_COUNT];
-} vulkan_renderer;
+#define ARRAYCOUNT(arr) sizeof(arr)/sizeof(arr[0])
 
 static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
 {
@@ -141,7 +26,6 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
     applicationInfo.engineVersion = 1;
     applicationInfo.apiVersion = 0;
 	    
-#if 1
     u32 instanceLayerCount = 0;
     VKCHECK(vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr));
     assert(instanceLayerCount > 0);
@@ -155,52 +39,43 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
     VkExtensionProperties extensionProperties[instanceExtensionCount];
     VKCHECK(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, extensionProperties));
 
-	OutputDebugString("INSTANCE LAYERS:\n");
+	OutputDebugStringA("INSTANCE LAYERS:\n");
 	for (int i = 0; i < instanceLayerCount; i++)
 	{
-		OutputDebugString(instanceLayers[i].layerName);
+		OutputDebugStringA(instanceLayers[i].layerName);
 		OutputDebugStringA(": ");
 		OutputDebugStringA(instanceLayers[i].description);
 		OutputDebugStringA("\n");
 	}
-	OutputDebugString("EXTENSION LAYERS:\n");
+	OutputDebugStringA("EXTENSION LAYERS:\n");
 	for (int i = 0; i < instanceExtensionCount; i++)
 	{
 		OutputDebugStringA(extensionProperties[i].extensionName);
 		OutputDebugStringA("\n");
 	}
-#else
-#endif
 
 	const char* enabledLayers[] =
-    {
-#if _DEBUG
-	  VK_KHR_VALIDATION_LAYER_NAME,
-#endif // _DEBUG
-    };
-    const char* enabledExtensions[] =
-    {
-	   VK_KHR_SURFACE_EXTENSION_NAME,
-#if _DEBUG
-	   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-#endif
-#if VK_USE_PLATFORM_WIN32_KHR
-	   VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-#else
-#endif
-    };
+	{
+		//"VK_LAYER_LUNARG_standard_validation"
+		"VK_LAYER_KHRONOS_validation"
+	};
+
+	const char* enabledExtensions[] =
+	{
+		VK_KHR_SURFACE_EXTENSION_NAME,
+		VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+		VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+	};
 
     VkInstanceCreateInfo createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pNext = nullptr;
     createInfo.flags = 0;
     createInfo.pApplicationInfo = &applicationInfo;
-    createInfo.enabledLayerCount = ArrayCount(enabledLayers);
+	createInfo.enabledLayerCount = ARRAYCOUNT(enabledLayers);
 	createInfo.ppEnabledLayerNames = enabledLayers;
-	createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);
-	//createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);//ArrayCount(enabledExtensions);
-	createInfo.ppEnabledExtensionNames = enabledExtensions; // enabledExtensions;
-	//createInfo.ppEnabledExtensionNames = enabledExtensions; // enabledExtensions;
+	createInfo.enabledExtensionCount = ARRAYCOUNT(enabledExtensions);
+	createInfo.ppEnabledExtensionNames = enabledExtensions;
 
     VkInstance instance;
 	VKCHECK(vkCreateInstance(&createInfo, allocator, &instance));
@@ -208,12 +83,11 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
     return instance;
 }
 
-#if NDEBUG == 0
+#if _DEBUG
 VkBool32 vk_debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, u64 object,
-    size_t location, i32 messageCode, const char* pLayerPrefix, const char* pMessage,
+    size_t location, int messageCode, const char* pLayerPrefix, const char* pMessage,
     void* pUserData)
 {
-	objectType = 5;
 	object = 5;
 	location = 5;
 	pUserData = 0;
@@ -250,16 +124,16 @@ VkBool32 vk_debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEX
 
     // Display message to default output (console/logcat)
     char debugMessage[4096];
-    platform_Sprintf(debugMessage, "%s [%s] Code %d:%s", prefix, pLayerPrefix, messageCode, pMessage);
+    sprintf(debugMessage, "%s [%s] Code %d:%s", prefix, pLayerPrefix, messageCode, pMessage);
 
 
     if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
     {
-	   platform_Fprintf(stderr, "%s\n", debugMessage);
+	   fprintf(stderr, "%s\n", debugMessage);
     }
     else
     {
-	   platform_Printf("%s\n", debugMessage);
+	   printf("%s\n", debugMessage);
     }
 
 #ifdef _WIN64
@@ -292,266 +166,98 @@ static inline VkDebugReportCallbackEXT vk_createDebugCallback(VkAllocationCallba
 }
 #endif
 
-static const char* vk_physicalDeviceTypeString(VkPhysicalDeviceType type)
+VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysicalDevice physicalDevice, VkInstance instance)
 {
-	switch (type)
+	u32 extensionCount = 0;
+	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr));
+	printf("Extension count: %d\n", extensionCount);
+	VkExtensionProperties extensions[extensionCount];
+	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, &extensions[0]));
+	printf("DEVICE EXTENSIONS\n\n");
+	for (int i = 0; i < extensionCount; i++)
 	{
-#define _LOCAL_TOSTRING(r) case VK_PHYSICAL_DEVICE_TYPE_ ##r: return #r
-		_LOCAL_TOSTRING(OTHER);
-		_LOCAL_TOSTRING(INTEGRATED_GPU);
-		_LOCAL_TOSTRING(DISCRETE_GPU);
-		_LOCAL_TOSTRING(VIRTUAL_GPU);
-#undef _LOCAL_TOSTRING
-		default: return "UNKNOWN_DEVICE";
+		printf("%s\n", extensions[i].extensionName);
 	}
-}
-
-static inline VkPhysicalDevice vk_pickPhysicalDevice(VkInstance instance)
-{
-    u32 physicalDeviceCount = 0;
-    VKCHECK(vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr));
-    assert(physicalDeviceCount > 0);
-    VkPhysicalDevice physicalDevices[physicalDeviceCount];
-    VKCHECK(vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, physicalDevices));
-	VkPhysicalDeviceProperties properties[physicalDeviceCount];
-	VkPhysicalDeviceFeatures features[physicalDeviceCount];
-
-    // TODO: formalize
-	platform_Printf("Listing available GPUs\n----------------------\n");
-
-    for (u32 i = 0; i < physicalDeviceCount; i++)
-    {
-		vkGetPhysicalDeviceProperties(physicalDevices[i], &properties[i]);
-		vkGetPhysicalDeviceFeatures(physicalDevices[i], &features[i]);
-
-		platform_Printf("Device %u: %s\n", i, properties[i].deviceName);
-		platform_Printf("\tType: %s\n", vk_physicalDeviceTypeString(properties[i].deviceType));
-		platform_Printf("\tAPI: %u.%u.%u\n",
-			VK_VERSION_MAJOR(properties[i].apiVersion),
-			VK_VERSION_MINOR(properties[i].apiVersion),
-			VK_VERSION_PATCH(properties[i].apiVersion));
-	}
-
-    return physicalDevices[0];
-}
-
-static inline u32 vk_getQueueFamilyIndex(VkQueueFlags queueFlags, const VkQueueFamilyProperties* queueFamilyProperties, u32 queueFamilyPropertyArraysize)
-{
-    // Dedicated queue for compute
-    // Try to find a queue family index that supports compute but not graphics
-    if (queueFlags & VK_QUEUE_COMPUTE_BIT)
-	   for (u32 i = 0; i < queueFamilyPropertyArraysize; i++)
-		  if ((queueFamilyProperties[i].queueFlags & queueFlags) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-			 return i;
-
-    // Dedicated queue for transfer
-    // Try to find a queue family index that supports transfer but not graphics and compute
-    if (queueFlags & VK_QUEUE_TRANSFER_BIT)
-	   for (u32 i = 0; i < queueFamilyPropertyArraysize; i++)
-		  if ((queueFamilyProperties[i].queueFlags & queueFlags) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-			 return i;
-
-    // For other queue types or if no separate compute queue is present, return the first one to support the requested flags
-    for (u32 i = 0; i < queueFamilyPropertyArraysize; i++)
-	   if (queueFamilyProperties[i].queueFlags & queueFlags)
-		  return i;
-
-    assert(!"Couldn't find a matching queue");
-    return 0;
-}
-
-// WARNING: pQueuePriorities might go out of scope!
-static inline void vk_setupQueueCreation(VkDeviceQueueCreateInfo* queueCreateInfoArray, queue_family* queueFamily, VkQueueFlags requestedQueueTypes, const float* defaultQueuePriorities)
-{
-    u32 currentIndex = 0;
-    
-    // Graphics queue
-    if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT)
-    {
-	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS] =
-		  vk_getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamily->properties, queueFamily->propertyCount);
-	   VkDeviceQueueCreateInfo queueInfo;
-	   queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	   queueInfo.pNext = nullptr;
-	   queueInfo.flags = 0;
-	   queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
-	   queueInfo.queueCount = 1;
-	   queueInfo.pQueuePriorities = defaultQueuePriorities;
-	   platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
-    }
-    else
-    {
-	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS] = VK_NULL_HANDLE;
-    }
-
-    // Compute queue
-    if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT)
-    {
-	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE] =
-		  vk_getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamily->properties, queueFamily->propertyCount);
-	   if (queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE] != queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS])
-	   {
-		  VkDeviceQueueCreateInfo queueInfo;
-		  queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		  queueInfo.pNext = nullptr;
-		  queueInfo.flags = 0;
-		  queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE];
-		  queueInfo.queueCount = 1;
-		  queueInfo.pQueuePriorities = defaultQueuePriorities;
-		  platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
-	   }
-    }
-    else
-    {
-	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE] = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
-    }
-
-    // Transfer queue
-    if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT)
-    {
-	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] =
-		  vk_getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamily->properties, queueFamily->propertyCount);
-	   if ((queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] != queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS])
-		  && (queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] != queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE]))
-	   {
-		  VkDeviceQueueCreateInfo queueInfo;
-		  queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		  queueInfo.pNext = nullptr;
-		  queueInfo.flags = 0;
-		  queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER];
-		  queueInfo.queueCount = 1;
-		  queueInfo.pQueuePriorities = defaultQueuePriorities;
-		  platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
-	   }
-    }
-    else
-    {
-	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
-    }
-}
-#include <stdlib.h>
-static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysicalDevice physicalDevice, swapchain_properties* swapchainProperties, VkQueueFlags queuesToCreate, u32 queueCount)
-{    
-    VkDeviceQueueCreateInfo queues[queueCount];
-	float defaultQueuePriorities[] = { 1.0f };
-	vk_setupQueueCreation(queues, &swapchainProperties->queueFamily, VK_QUEUE_GRAPHICS_BIT, defaultQueuePriorities);
-
-    //const char* enabledLayers[] =
-    //{
-////#if _DEBUG
-		//VK_KHR_VALIDATION_LAYER_NAME,
-//#endif // _DEBUG
-    //};
-
-    const char* enabledExtensions[] =
-	{	 
-	   VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
-	OutputDebugString(swapchainProperties->physicalDeviceProperties.deviceName);
 
 	u32 layerCount = 0;
-	VKCHECK(vkEnumerateDeviceLayerProperties(physicalDevice, &layerCount, null));
-	VkLayerProperties deviceLayers[layerCount];
-	VKCHECK(vkEnumerateDeviceLayerProperties(physicalDevice, &layerCount, deviceLayers));
-
-//	u32 extensionCount = 0;
-//	VkExtensionProperties* blabla = malloc(100000);
-//	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, null, &extensionCount, blabla));
-//	VkExtensionProperties deviceExtensions[extensionCount];
-//	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, null, &extensionCount, deviceExtensions));
-
-	
-	VkDeviceQueueCreateInfo queueCreateInfo;
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.pNext = 0;
-	const float priority[] = { 1.0f };
-	queueCreateInfo.pQueuePriorities = priority;
-	queueCreateInfo.queueCount = 1;
-	queueCreateInfo.queueFamilyIndex = 0;
-	queueCreateInfo.flags = 0;
-
-	VkDeviceCreateInfo createInfo;
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = nullptr;
-    createInfo.flags = 0;
-    createInfo.queueCreateInfoCount = 1;
-	createInfo.pQueueCreateInfos = &queueCreateInfo;
-	createInfo.enabledLayerCount = 0; 
-	createInfo.ppEnabledLayerNames = 0;
-	createInfo.enabledExtensionCount = 0;
-	//createInfo.enabledExtensionCount = ArrayCount(enabledExtensions);
-	createInfo.ppEnabledExtensionNames = 0;
-	//createInfo.ppEnabledExtensionNames = enabledExtensions;
-	createInfo.pEnabledFeatures = &swapchainProperties->features;
-
-    VkDevice device = nullptr;
-    VKCHECK(vkCreateDevice(physicalDevice, &createInfo, allocator, &device));
-
-    return device;
-}
-
-static inline void vk_getQueues(VkQueue* queueArray, VkDevice device, queue_family* queueFamily)
-{	
-	// TODO: this is now getting all three types of queues. Modify to widen use
-	for (enum Vk_QueueFamilyIndex familyIndex = 0; familyIndex < QUEUE_FAMILY_INDEX_COUNT; familyIndex++)
+	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &layerCount, nullptr));
+	printf("Layer count: %d\n", layerCount);
+	VkLayerProperties layers[layerCount];
+	VKCHECK(vkEnumerateDeviceLayerProperties(physicalDevice, &layerCount, &layers[0]));
+	printf("DEVICE LAYERS\n\n");
+	for (int i = 0; i < layerCount; i++) 
 	{
-		VkQueue queue;
-		vkGetDeviceQueue(device, queueFamily->indices[familyIndex], 0, &queue); queueArray[familyIndex] = queue;
+		printf("%s: %s\n", layers[i].layerName, layers[i].description);
 	}
+
+
+	const char* extensionNames[] =
+	{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+	float queuePriorities[] = { 0.0f };
+	VkDeviceQueueCreateInfo queueInfo = { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+	queueInfo.pQueuePriorities = queuePriorities;
+	queueInfo.queueCount = 1;
+	VkDeviceCreateInfo createInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	createInfo.enabledLayerCount = 0;
+	createInfo.pEnabledFeatures = 0;
+	createInfo.enabledExtensionCount = ARRAYCOUNT(extensionNames);
+	createInfo.ppEnabledExtensionNames = extensionNames;
+	createInfo.pQueueCreateInfos = &queueInfo;
+	createInfo.queueCreateInfoCount = 1;
+	VkDevice device;
+	VKCHECK(vkCreateDevice(physicalDevice, &createInfo, allocator, &device));
+
+	return device;
 }
 
-static inline VkSurfaceFormatKHR vk_pickSurfaceFormat(const VkSurfaceFormatKHR* surfaceFormats, u32 surfaceFormatCount)
+typedef struct
 {
-    VkSurfaceFormatKHR pickedSurfaceFormat = {0};
-    if (surfaceFormatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
-    {
-	   pickedSurfaceFormat.format = VK_FORMAT_UNDEFINED;
-	   pickedSurfaceFormat.colorSpace = surfaceFormats[0].colorSpace;
-	   return pickedSurfaceFormat;
-    }
-    else
-    {
-	   const VkFormat desiredFormat = VK_FORMAT_B8G8R8A8_UNORM;
-	   for (u32 i = 0; i < surfaceFormatCount; i++)
-	   {
-		  VkSurfaceFormatKHR surfaceFormat = surfaceFormats[i];
-		  if (surfaceFormat.format == desiredFormat)
-		  {
-			 pickedSurfaceFormat = surfaceFormat;
-			 return pickedSurfaceFormat;
-		  }
-	   }
-    }
+#if _WIN64
+	HWND window;
+	HINSTANCE instance;
+#endif
+} os_window_handler;
 
-    // Simply pick the first one
-    pickedSurfaceFormat = surfaceFormats[0];
-    return pickedSurfaceFormat;
-}
-
-static inline VkSurfaceKHR vk_createSurface(VkAllocationCallbacks* allocator, VkInstance instance, platform_dependencies* window)
+static inline VkSurfaceKHR vk_createSurface(VkAllocationCallbacks* allocator, VkInstance instance, os_window_handler* window)
 {
-#if VK_USE_PLATFORM_WIN32_KHR
-    VkWin32SurfaceCreateInfoKHR createInfo;
+#if _WIN64
+	VkWin32SurfaceCreateInfoKHR createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.pNext = nullptr;
     createInfo.flags = 0;
-    createInfo.hinstance = window->anotherOSHandle;
-    createInfo.hwnd = window->windowHandle;
+    createInfo.hinstance = window->instance;
+    createInfo.hwnd = window->window;
 
-        VkSurfaceKHR surface;
-    VKCHECK(vkCreateWin32SurfaceKHR(instance, &createInfo, allocator, &surface));
+	VkSurfaceKHR surface;
+	VKCHECK(vkCreateWin32SurfaceKHR(instance, &createInfo, allocator, &surface));
 
-#else
-#include <GLFW/glfw3.h>
-    VkSurfaceKHR surface;
-    GLFWwindow* window2 = null;
-    glfwCreateWindowSurface(instance, window2, allocator, &surface);
 #endif
-
-
-    return surface;
+	return surface;
 }
+#define QUEUE_FAMILY_PROPERTY_COUNT 34
+#define QUEUE_FAMILY_INDEX_COUNT 3
+#define SURFACE_FORMAT_COUNT 2
+#define PRESENT_MODE_COUNT 3
+#define IMAGE_COUNT 3
+typedef u32 queue_family_indices[QUEUE_FAMILY_INDEX_COUNT];
+typedef struct
+{
+    VkQueueFamilyProperties properties[QUEUE_FAMILY_PROPERTY_COUNT];
+    size_t propertyCount;
+    queue_family_indices indices;
+} queue_family;
+typedef struct
+{
+    queue_family queueFamily;
+    VkPhysicalDeviceFeatures features;
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    VkSurfaceFormatKHR surfaceFormats[SURFACE_FORMAT_COUNT];
+	VkPresentModeKHR presentModes[PRESENT_MODE_COUNT];
+} swapchain_properties;
 
 static inline void vk_fillSwapchainProperties(swapchain_properties* swapchainProperties, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 {
@@ -691,16 +397,42 @@ typedef struct
 }
 swapchain_requirements;
 
+static inline VkSurfaceFormatKHR vk_pickSurfaceFormat(const VkSurfaceFormatKHR* surfaceFormats, u32 surfaceFormatCount)
+{
+    VkSurfaceFormatKHR pickedSurfaceFormat = {0};
+    if (surfaceFormatCount == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
+    {
+	   pickedSurfaceFormat.format = VK_FORMAT_UNDEFINED;
+	   pickedSurfaceFormat.colorSpace = surfaceFormats[0].colorSpace;
+	   return pickedSurfaceFormat;
+    }
+    else
+    {
+	   const VkFormat desiredFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	   for (u32 i = 0; i < surfaceFormatCount; i++)
+	   {
+		  VkSurfaceFormatKHR surfaceFormat = surfaceFormats[i];
+		  if (surfaceFormat.format == desiredFormat)
+		  {
+			 pickedSurfaceFormat = surfaceFormat;
+			 return pickedSurfaceFormat;
+		  }
+	   }
+    }
+
+    // Simply pick the first one
+    pickedSurfaceFormat = surfaceFormats[0];
+    return pickedSurfaceFormat;
+}
 static inline void vk_fillSwapchainRequirements(swapchain_requirements* swapchainRequirements, swapchain_properties* swapchainProperties, VkExtent2D* desiredSwapchainExtent)
 {
-    swapchainRequirements->surfaceFormat = vk_pickSurfaceFormat(swapchainProperties->surfaceFormats, ArrayCount(swapchainProperties->surfaceFormats));
+    swapchainRequirements->surfaceFormat = vk_pickSurfaceFormat(swapchainProperties->surfaceFormats, ARRAYCOUNT(swapchainProperties->surfaceFormats));
     swapchainRequirements->imageExtent = vk_pickImageExtent(&swapchainProperties->surfaceCapabilities, desiredSwapchainExtent);
-    swapchainRequirements->presentMode = vk_pickPresentMode(swapchainProperties->presentModes, ArrayCount(swapchainProperties->presentModes));
+    swapchainRequirements->presentMode = vk_pickPresentMode(swapchainProperties->presentModes, ARRAYCOUNT(swapchainProperties->presentModes));
     swapchainRequirements->imageUsage = vk_getImageUsage(swapchainProperties->surfaceCapabilities.supportedUsageFlags, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     swapchainRequirements->surfaceTransform = vk_pickImageTransformation(&swapchainProperties->surfaceCapabilities, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR); // TODO: investigate further
     swapchainRequirements->minImageCount = vk_pickImageCount(&swapchainProperties->surfaceCapabilities);
 }
-
 static inline VkSwapchainKHR vk_createSwapchain(VkAllocationCallbacks* allocator, VkDevice device, VkSurfaceKHR surface, swapchain_requirements* swapchainRequirements, VkSwapchainKHR oldSwapchain)
 {
     VkSwapchainCreateInfoKHR createInfo;
@@ -1206,7 +938,7 @@ static inline void vk_mapAndCopyMemoryToDevice(VkDevice device, VkDeviceMemory h
 		}
 	};
 
-	VKCHECK(vkFlushMappedMemoryRanges(device, ArrayCount(memoryRanges), memoryRanges));
+	VKCHECK(vkFlushMappedMemoryRanges(device, ARRAYCOUNT(memoryRanges), memoryRanges));
 
 	if (unmap)
 	{
@@ -1379,7 +1111,7 @@ static inline VkSampler vk_createSampler(VkAllocationCallbacks* allocator, VkDev
 
 static inline void vk_presentImage(VkQueue graphicsQueue, VkSemaphore* semaphoreArray, u32 semaphoreCount, VkSwapchainKHR* swapchainArray, u32 swapchainCount, u32* imageIndexArray)
 {
-	VkResult result;
+	VkResult result[swapchainCount];
 	VkPresentInfoKHR presentInfo;
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext = nullptr;
@@ -1388,19 +1120,134 @@ static inline void vk_presentImage(VkQueue graphicsQueue, VkSemaphore* semaphore
 	presentInfo.swapchainCount = swapchainCount;
 	presentInfo.pSwapchains = swapchainArray;
 	presentInfo.pImageIndices = imageIndexArray;
-	presentInfo.pResults = &result;
+	presentInfo.pResults = result;
 
 	VKCHECK(vkQueuePresentKHR(graphicsQueue, &presentInfo));
 }
 
+static inline u32 vk_getQueueFamilyIndex(VkQueueFlags queueFlags, const VkQueueFamilyProperties* queueFamilyProperties, u32 queueFamilyPropertyArraysize)
+{
+    // Dedicated queue for compute
+    // Try to find a queue family index that supports compute but not graphics
+    if (queueFlags & VK_QUEUE_COMPUTE_BIT)
+	   for (u32 i = 0; i < queueFamilyPropertyArraysize; i++)
+		  if ((queueFamilyProperties[i].queueFlags & queueFlags) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+			 return i;
 
-void vk_load(vulkan_renderer* vk, platform_dependencies* window)
+    // Dedicated queue for transfer
+    // Try to find a queue family index that supports transfer but not graphics and compute
+    if (queueFlags & VK_QUEUE_TRANSFER_BIT)
+	   for (u32 i = 0; i < queueFamilyPropertyArraysize; i++)
+		  if ((queueFamilyProperties[i].queueFlags & queueFlags) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+			 return i;
+
+    // For other queue types or if no separate compute queue is present, return the first one to support the requested flags
+    for (u32 i = 0; i < queueFamilyPropertyArraysize; i++)
+	   if (queueFamilyProperties[i].queueFlags & queueFlags)
+		  return i;
+
+    assert(!"Couldn't find a matching queue");
+    return 0;
+}
+
+// WARNING: pQueuePriorities might go out of scope!
+static inline void vk_setupQueueCreation(VkDeviceQueueCreateInfo* queueCreateInfoArray, queue_family* queueFamily, VkQueueFlags requestedQueueTypes, const float* defaultQueuePriorities)
+{
+    u32 currentIndex = 0;
+    
+    // Graphics queue
+    if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT)
+    {
+	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS] =
+		  vk_getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamily->properties, queueFamily->propertyCount);
+	   VkDeviceQueueCreateInfo queueInfo;
+	   queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	   queueInfo.pNext = nullptr;
+	   queueInfo.flags = 0;
+	   queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
+	   queueInfo.queueCount = 1;
+	   queueInfo.pQueuePriorities = defaultQueuePriorities;
+	   platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
+    }
+    else
+    {
+	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS] = VK_NULL_HANDLE;
+    }
+
+    // Compute queue
+    if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT)
+    {
+	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE] =
+		  vk_getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamily->properties, queueFamily->propertyCount);
+	   if (queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE] != queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS])
+	   {
+		  VkDeviceQueueCreateInfo queueInfo;
+		  queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		  queueInfo.pNext = nullptr;
+		  queueInfo.flags = 0;
+		  queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE];
+		  queueInfo.queueCount = 1;
+		  queueInfo.pQueuePriorities = defaultQueuePriorities;
+		  platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
+	   }
+    }
+    else
+    {
+	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE] = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
+    }
+
+    // Transfer queue
+    if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT)
+    {
+	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] =
+		  vk_getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamily->properties, queueFamily->propertyCount);
+	   if ((queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] != queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS])
+		  && (queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] != queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE]))
+	   {
+		  VkDeviceQueueCreateInfo queueInfo;
+		  queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		  queueInfo.pNext = nullptr;
+		  queueInfo.flags = 0;
+		  queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER];
+		  queueInfo.queueCount = 1;
+		  queueInfo.pQueuePriorities = defaultQueuePriorities;
+		  platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
+	   }
+    }
+    else
+    {
+	   queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER] = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
+    }
+}
+
+typedef struct
+{
+    VkAllocationCallbacks allocator;
+    VkInstance instance;
+#if _DEBUG
+    VkDebugReportCallbackEXT debugCallback;
+#endif
+    swapchain_properties swapchainProperties;
+    VkPhysicalDevice physicalDevice;
+    VkDevice device;
+	VkQueue queues[QUEUE_FAMILY_INDEX_COUNT];
+    VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
+	VkImage swapchainImages[IMAGE_COUNT];
+	VkCommandPool commandPool;
+	VkCommandBuffer commandBuffers[IMAGE_COUNT];
+	VkSemaphore imageAcquireSemaphore;
+} vulkan_renderer;
+
+#define WIDTH 1024
+#define HEIGHT 578
+void vk_load(vulkan_renderer* vk, os_window_handler* window)
 {
     VkAllocationCallbacks* allocator = nullptr;
 
     VkQueueFlags availableQueues[] = { VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT };
     VkQueueFlags queuesToCreate = 0;
-    u32 availableQueueCount = ArrayCount(availableQueues);
+    u32 availableQueueCount = ARRAYCOUNT(availableQueues);
     for (u32 i = 0; i < availableQueueCount; i++)
     {
 	   queuesToCreate |= availableQueues[i];
@@ -1413,7 +1260,7 @@ void vk_load(vulkan_renderer* vk, platform_dependencies* window)
     // Here ends all Volk code usage
 #if _DEBUG
 	VkDebugReportFlagsEXT debugCallbackFlags =
-		VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+		//VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
 		VK_DEBUG_REPORT_WARNING_BIT_EXT |
 		VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
 		VK_DEBUG_REPORT_ERROR_BIT_EXT |
@@ -1421,24 +1268,35 @@ void vk_load(vulkan_renderer* vk, platform_dependencies* window)
 		
     vk->debugCallback = vk_createDebugCallback(allocator, vk->instance, debugCallbackFlags, vk_debugCallback);
 #endif
-    vk->physicalDevice = vk_pickPhysicalDevice(vk->instance);
+   	u32 physicalDeviceCount = 0;
+	VKCHECK(vkEnumeratePhysicalDevices(vk->instance, &physicalDeviceCount, nullptr));
+	VkPhysicalDevice physicalDevices[physicalDeviceCount];
+
+	VKCHECK(vkEnumeratePhysicalDevices(vk->instance, &physicalDeviceCount, &physicalDevices[0]));
+	vk->physicalDevice = physicalDevices[0];
+	vk->device = vk_createDevice(allocator, vk->physicalDevice, vk->instance);
 	
-    vk->surface = vk_createSurface(allocator, vk->instance, window);
+	vk->surface = vk_createSurface(nullptr, vk->instance, window);
     vk_fillSwapchainProperties(&vk->swapchainProperties, vk->physicalDevice, vk->surface);
-    vk->device = vk_createDevice(allocator, vk->physicalDevice, &vk->swapchainProperties, queuesToCreate, availableQueueCount);
-//	vk_getQueues(vk->queues, vk->device, &vk->swapchainProperties.queueFamily);
-//    swapchain_requirements swapchainRequirements;
-//    vk_fillSwapchainRequirements(&swapchainRequirements, &vk->swapchainProperties, surfaceExtent);
-//    vk->swapchain = vk_createSwapchain(allocator, vk->device, vk->surface, &swapchainRequirements, nullptr /* TODO: investigate this further*/);
-//	vk_getSwapchainImages(vk->swapchainImages, vk->device, vk->swapchain);
-//	VkSemaphore imageAcquireSemaphore = vk_createSemaphoreUnsignaled(allocator, vk->device);
-//	vk->commandPool = vk_createCommandPool(allocator, vk->device, vk->swapchainProperties.queueFamily.indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS]);
-//	vk_createCommandBuffers(vk->device, vk->commandPool, IMAGE_COUNT, vk->commandBuffers);
-//	u32 currentImageIndex = vk_acquireNextImage(vk->device, vk->swapchain, imageAcquireSemaphore);
-//
-//	vk_presentImage(vk->queues[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], &imageAcquireSemaphore, 1, &vk->swapchain, 1, &currentImageIndex);
-//
-//
+    VkExtent2D swapchainExtent = { WIDTH, HEIGHT };
+    swapchain_requirements swapchainRequirements;
+    vk_fillSwapchainRequirements(&swapchainRequirements, &vk->swapchainProperties, &swapchainExtent);
+    vk->swapchain = vk_createSwapchain(nullptr, vk->device, vk->surface, &swapchainRequirements, nullptr);
+	vk_getSwapchainImages(vk->swapchainImages, vk->device, vk->swapchain);
+	VkDeviceQueueCreateInfo queueInfo;
+	float priorities[] = { 0.0f };
+	VkQueueFlags queues = VK_QUEUE_GRAPHICS_BIT;
+	vk_setupQueueCreation(&queueInfo, &vk->swapchainProperties.queueFamily, queues, priorities);
+
+	vkGetDeviceQueue(vk->device, vk->swapchainProperties.queueFamily.indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], 0, &vk->queues[0]);
+	vk->imageAcquireSemaphore = vk_createSemaphoreUnsignaled(allocator, vk->device);
+	vk->commandPool = vk_createCommandPool(allocator, vk->device, vk->swapchainProperties.queueFamily.indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS]);
+	vk_createCommandBuffers(vk->device, vk->commandPool, IMAGE_COUNT, vk->commandBuffers);
+	u32 currentImageIndex = vk_acquireNextImage(vk->device, vk->swapchain, vk->imageAcquireSemaphore);
+
+	vk_presentImage(vk->queues[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], &vk->imageAcquireSemaphore, 1, &vk->swapchain, 1, &currentImageIndex);
+
+
 //	// TODO: TEMPORAL STUFF TO BE MOVED AWAY
 //	vkDestroySemaphore(vk->device, imageAcquireSemaphore, allocator);
 }
@@ -1456,4 +1314,3 @@ void vk_destroy(vulkan_renderer* vk)
 #endif
     vkDestroyInstance(vk->instance, allocator);
 }
-#endif

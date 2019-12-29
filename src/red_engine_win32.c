@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	vulkan_renderer vk;
 	QPC(startVk);
-	vk_load(&vk, &win32_vulkan_dependencies);
+	vk_load(&vk, (os_window_handler*)&win32_vulkan_dependencies);
 	QPC(endVk);
 
 	printf("%f", (float)(endVk - startVk) / win32.timer.performanceFrequency);
