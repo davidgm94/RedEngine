@@ -549,19 +549,7 @@ static inline void vk_resetCommandPool(VkCommandPool commandPool, VkDevice devic
 	VKCHECK(vkResetCommandPool(device, commandPool, resetFlags));
 }
 
-static inline VkSemaphore vk_createSemaphoreSignaled(VkAllocationCallbacks* allocator, VkDevice device)
-{
-	VkSemaphoreCreateInfo createInfo;
-	createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	createInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-	createInfo.pNext = nullptr;
-	VkSemaphore semaphore;
-	VKCHECK(vkCreateSemaphore(device, &createInfo, allocator, &semaphore));
-
-	return semaphore;
-}
-
-static inline VkSemaphore vk_createSemaphoreUnsignaled(VkAllocationCallbacks* allocator, VkDevice device)
+static inline VkSemaphore vk_createSemaphore(VkAllocationCallbacks* allocator, VkDevice device)
 {
 	VkSemaphoreCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -573,24 +561,12 @@ static inline VkSemaphore vk_createSemaphoreUnsignaled(VkAllocationCallbacks* al
 	return semaphore;
 }
 
-static inline VkFence vk_createFenceSignaled(VkAllocationCallbacks* allocator, VkDevice device)
+static inline VkFence vk_createFence(VkAllocationCallbacks* allocator, VkDevice device, VkFenceCreateFlagBits syncState)
 {
 	VkFenceCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	createInfo.pNext = nullptr;
-	createInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-	VkFence fence;
-	VKCHECK(vkCreateFence(device, &createInfo, allocator, &fence));
-
-	return fence;
-}
-
-static inline VkFence vk_createFenceUnsignaled(VkAllocationCallbacks* allocator, VkDevice device)
-{
-	VkFenceCreateInfo createInfo;
-	createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	createInfo.pNext = nullptr;
-	createInfo.flags = 0;
+	createInfo.flags = syncState;
 	VkFence fence;
 	VKCHECK(vkCreateFence(device, &createInfo, allocator, &fence));
 
@@ -1007,7 +983,7 @@ static inline void vk_updateDeviceLocalMemoryBufferThroughStagingBuffer(VkAlloca
 	
 	vk_endCommandBuffer(commandBuffer);
 
-	VkFence fence = vk_createFenceUnsignaled(allocator, device);
+	VkFence fence = vk_createFence(allocator, device, !VK_FENCE_CREATE_SIGNALED_BIT);
 
 	vk_submitCommandsToQueue(nullptr, 0, 0, queue, &(VkCommandBuffer) { commandBuffer }, 1, signalSemaphoreArray, signalSemaphoreCount, fence);
 
@@ -1054,7 +1030,7 @@ static inline void vk_updateDeviceLocalMemoryImageThroughStagingBuffer(VkAllocat
 	
 	vk_endCommandBuffer(commandBuffer);
 
-	VkFence fence = vk_createFenceUnsignaled(allocator, device);
+	VkFence fence = vk_createFence(allocator, device, !VK_FENCE_CREATE_SIGNALED_BIT);
 
 	vk_submitCommandsToQueue(nullptr, 0, 0, queue, &(VkCommandBuffer) { commandBuffer }, 1, signalSemaphoreArray, signalSemaphoreCount, fence);
 
@@ -1289,16 +1265,12 @@ void vk_load(vulkan_renderer* vk, os_window_handler* window)
 	vk_setupQueueCreation(&queueInfo, &vk->swapchainProperties.queueFamily, queues, priorities);
 
 	vkGetDeviceQueue(vk->device, vk->swapchainProperties.queueFamily.indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], 0, &vk->queues[0]);
-	vk->imageAcquireSemaphore = vk_createSemaphoreUnsignaled(allocator, vk->device);
+	vk->imageAcquireSemaphore = vk_createSemaphore(allocator, vk->device);
 	vk->commandPool = vk_createCommandPool(allocator, vk->device, vk->swapchainProperties.queueFamily.indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS]);
 	vk_createCommandBuffers(vk->device, vk->commandPool, IMAGE_COUNT, vk->commandBuffers);
 	u32 currentImageIndex = vk_acquireNextImage(vk->device, vk->swapchain, vk->imageAcquireSemaphore);
 
 	vk_presentImage(vk->queues[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], &vk->imageAcquireSemaphore, 1, &vk->swapchain, 1, &currentImageIndex);
-
-
-//	// TODO: TEMPORAL STUFF TO BE MOVED AWAY
-//	vkDestroySemaphore(vk->device, imageAcquireSemaphore, allocator);
 }
 
 void vk_destroy(vulkan_renderer* vk)
