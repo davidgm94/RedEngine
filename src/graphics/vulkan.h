@@ -758,13 +758,19 @@ static inline VkBufferView vk_createBufferView(VkAllocationCallbacks* allocator,
 	return bufferView;
 }
 
+typedef enum
+{
+	RENDER_CUBE_FALSE,
+	RENDER_CUBE_TRUE,
+} RenderCube;
+
 static inline VkImage vk_createImage(VkAllocationCallbacks* allocator, VkDevice device,
-	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkSampleCountFlagBits samples, VkImageUsageFlags usage, bool renderCube)
+	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkSampleCountFlagBits samples, VkImageUsageFlags usage, RenderCube renderCube)
 {
 	VkImageCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	createInfo.pNext = nullptr;
-	createInfo.flags = renderCube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0; // TODO: look at this in the future
+	createInfo.flags = renderCube == RENDER_CUBE_TRUE ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0; // TODO: look at this in the future
 	createInfo.imageType = type;
 	createInfo.format = format;
 	createInfo.extent = *extent;
@@ -875,7 +881,7 @@ typedef struct
 } VulkanImage;
 
 static inline VulkanImage vk_create2DImage(VkAllocationCallbacks* allocator, VkDevice device, VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
-	VkFormat format, VkExtent2D* extent2D, u32 mipmapLevelCount, u32 layerCount, VkSampleCountFlagBits sampleCount, VkImageUsageFlags usage, VkImageAspectFlags aspect, bool renderCube)
+	VkFormat format, VkExtent2D* extent2D, u32 mipmapLevelCount, u32 layerCount, VkSampleCountFlagBits sampleCount, VkImageUsageFlags usage, VkImageAspectFlags aspect, RenderCube renderCube)
 {
 	VkExtent3D extent = (VkExtent3D){ extent2D->width, extent2D->height, 1 };
 	VkImage image = vk_createImage(allocator, device, VK_IMAGE_TYPE_2D, format, &extent, mipmapLevelCount, layerCount, sampleCount, usage, renderCube);
@@ -1041,6 +1047,23 @@ static inline void vk_updateDeviceLocalMemoryImageThroughStagingBuffer(VkAllocat
 	vkDestroyBuffer(device, stagingBuffer, allocator);
 }
 
+typedef enum
+{
+	ANISOTROPY_DISABLED,
+	ANISOTROPY_ENABLED,
+} anisotropy_config;
+
+typedef enum
+{
+	COMPARE_OP_DISABLED,
+	COMPARE_OP_ENABLED,
+} compare_op_config;
+
+typedef enum
+{
+	UNNORMALIZED_COORDINATES_DISABLED,
+	UNNORMALIZED_COORDINATES_ENABLED,
+} unnormalized_coordinates_config;
 /*
 	Descriptors are opaque data structures that represent shader resources.
 	They are organized
@@ -1053,10 +1076,10 @@ static inline void vk_updateDeviceLocalMemoryImageThroughStagingBuffer(VkAllocat
 static inline VkSampler vk_createSampler(VkAllocationCallbacks* allocator, VkDevice device,
 	VkFilter magFilter, VkFilter minFilter, VkSamplerMipmapMode mipmapMode,
 	VkSamplerAddressMode u, VkSamplerAddressMode v, VkSamplerAddressMode w,
-	float miploadBias, bool anisotropyEnable, float maxAnisotropy, 
-	bool compareEnable, VkCompareOp compareOp,
+	float miploadBias, anisotropy_config anisotropyEnable, float maxAnisotropy, 
+	compare_op_config compareEnable, VkCompareOp compareOp,
 	float minLOD, float maxLOD,
-	VkBorderColor borderColor, bool unnormalizedCoordinates)
+	VkBorderColor borderColor, unnormalized_coordinates_config unnormalizedCoordinates)
 {
 	VkSamplerCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1083,6 +1106,203 @@ static inline VkSampler vk_createSampler(VkAllocationCallbacks* allocator, VkDev
 
 	return sampler;
 }
+
+static inline VulkanImage vk_createSampledImage(VkAllocationCallbacks* allocator, VkDevice device,
+	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkSampleCountFlagBits samples, VkImageUsageFlags usage, RenderCube renderCube,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
+	VkImageViewType imageViewType, VkImageAspectFlags aspect)
+{
+	VkImage image = vk_createImage(allocator, device, type, format, extent, mipmapLevelCount, layerCount, VK_SAMPLE_COUNT_1_BIT, usage | VK_IMAGE_USAGE_SAMPLED_BIT, renderCube);
+	VkDeviceMemory memory = vk_allocateAndBindToImage(allocator, device, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+	VkImageView imageView = vk_createImageView(allocator, device, image, imageViewType, format, aspect);
+
+	return (VulkanImage) { image, memory, imageView };
+}
+
+typedef struct
+{
+	VulkanImage sampledImage;
+	VkSampler sampler;
+} VulkanCombinedImageSampler;
+
+static inline VulkanCombinedImageSampler vk_createCombinedImageSampler(VkAllocationCallbacks* allocator, VkDevice device,
+	VkFilter magFilter, VkFilter minFilter, VkSamplerMipmapMode mipmapMode,
+	VkSamplerAddressMode u, VkSamplerAddressMode v, VkSamplerAddressMode w,
+	float miploadBias, anisotropy_config anisotropyEnable, float maxAnisotropy, 
+	compare_op_config compareEnable, VkCompareOp compareOp,
+	float minLOD, float maxLOD,
+	VkBorderColor borderColor, unnormalized_coordinates_config unnormalizedCoordinates,
+	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkSampleCountFlagBits samples, VkImageUsageFlags usage, RenderCube renderCube,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
+	VkImageViewType imageViewType, VkImageAspectFlags aspect)
+{
+	VkSampler sampler = vk_createSampler(allocator, device, magFilter, minFilter, mipmapMode, u, v, w, miploadBias, anisotropyEnable, maxAnisotropy, compareEnable, compareOp, minLOD, maxLOD, borderColor, unnormalizedCoordinates);
+	VulkanImage sampledImage = vk_createSampledImage(allocator, device, type, format, extent, mipmapLevelCount, layerCount, samples, usage, renderCube, physicalDeviceMemoryProperties, imageViewType, aspect);
+	return (VulkanCombinedImageSampler) { sampledImage, sampler };
+}
+
+static inline VulkanImage vk_createStorageImage(VkAllocationCallbacks* allocator, VkDevice device,
+	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkImageUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
+	VkImageViewType imageViewType, VkImageAspectFlagBits aspect)
+{
+	VkImage image = vk_createImage(allocator, device, type, format, extent, mipmapLevelCount, layerCount, VK_SAMPLE_COUNT_1_BIT, usage | VK_IMAGE_USAGE_STORAGE_BIT, RENDER_CUBE_FALSE);
+	VkDeviceMemory memory = vk_allocateAndBindToImage(allocator, device, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+	VkImageView imageView = vk_createImageView(allocator, device, image, imageViewType, format, aspect);
+
+	return (VulkanImage) { image, memory, imageView };
+}
+
+typedef struct
+{
+	VkBuffer buffer;
+	VkDeviceMemory memory;
+	VkBufferView view;
+} VulkanBuffer;
+
+static inline VulkanBuffer vk_createUniformTexelBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
+	VkFormat format)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+	VkBufferView view = vk_createBufferView(allocator, device, buffer, format, 0, VK_WHOLE_SIZE); 
+
+	return (VulkanBuffer) { buffer, memory, view };
+}
+
+static inline VulkanBuffer vk_createStorageTexelBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
+	VkFormat format)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+	VkBufferView view = vk_createBufferView(allocator, device, buffer, format, 0, VK_WHOLE_SIZE); 
+
+	return (VulkanBuffer) { buffer, memory, view };
+}
+
+typedef struct
+{
+	VkBuffer buffer;
+	VkDeviceMemory memory;
+} VulkanBufferNoView;
+
+static inline VulkanBufferNoView vk_createUniformBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+
+	return (VulkanBufferNoView) { buffer, memory };
+}
+
+static inline VulkanBufferNoView vk_createStorageBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+
+	return (VulkanBufferNoView) { buffer, memory };
+}
+
+static inline VulkanImage vk_createInputAttachment(VkAllocationCallbacks* allocator, VkDevice device,
+	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkImageUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties,
+	VkImageViewType imageViewType, VkImageAspectFlagBits aspect)
+{
+	VkImage image = vk_createImage(allocator, device, type, format, extent, 1, 1, VK_SAMPLE_COUNT_1_BIT, usage | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, RENDER_CUBE_FALSE);
+	VkDeviceMemory memory = vk_allocateAndBindToImage(allocator, device, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+	VkImageView imageView = vk_createImageView(allocator, device, image, imageViewType, format, aspect);
+
+	return (VulkanImage) { image, memory, imageView };
+}
+
+static inline VkDescriptorSetLayout vk_createDescriptorSetLayout(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDescriptorSetLayoutBinding* bindingArray, u32 bindingCount)
+{
+	VkDescriptorSetLayoutCreateInfo createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    createInfo.pNext = null;
+    createInfo.flags = 0; // TODO: investigate this further:
+    // VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR = 0x00000001,
+    // VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT = 0x00000002,
+	createInfo.bindingCount = bindingCount;
+    createInfo.pBindings = bindingArray;
+
+	VkDescriptorSetLayout setLayout;
+	VKCHECK(vkCreateDescriptorSetLayout(device, &createInfo, allocator, &setLayout));
+
+	return setLayout;
+}
+
+typedef enum
+{
+	FREE_DESCRIPTOR_SETS_FALSE, 
+	FREE_DESCRIPTOR_SETS_TRUE,
+} free_descriptor_sets_config;
+
+static inline VkDescriptorPool vk_createDescriptorPool(VkAllocationCallbacks* allocator, VkDevice device,
+	free_descriptor_sets_config freeDescriptorSets,
+	u32 maxSetCount, VkDescriptorPoolSize* poolSizeArray, u32 poolSizeCount)
+{
+	VkDescriptorPoolCreateInfo createInfo;
+    createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    createInfo.pNext = null;
+	createInfo.flags = freeDescriptorSets ? VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT : 0;
+    createInfo.maxSets = maxSetCount;
+    createInfo.poolSizeCount = poolSizeCount;
+    createInfo.pPoolSizes = poolSizeArray;
+
+	VkDescriptorPool descriptorPool;
+	VKCHECK(vkCreateDescriptorPool(device, &createInfo, allocator, &descriptorPool));
+
+	return descriptorPool;
+}
+
+static inline VkDescriptorSet* vk_allocateDescriptorSets(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDescriptorPool descriptorPool, VkDescriptorSetLayout* descriptorSetLayouts, u32 descriptorSetLayoutCount,
+	VkDescriptorSet* descriptorSets)
+{
+	VkDescriptorSetAllocateInfo allocateInfo;
+    allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocateInfo.pNext = null;
+    allocateInfo.descriptorPool = descriptorPool;
+    allocateInfo.descriptorSetCount = descriptorSetLayoutCount;
+    allocateInfo.pSetLayouts = descriptorSetLayouts;
+
+	VKCHECK(vkAllocateDescriptorSets(device, &allocateInfo, descriptorSets));
+
+	return descriptorSets;
+}
+
+// TODO: write the function
+static inline void vk_updateDescriptorSets()
+{
+	
+}
+
+static inline vk_bindDescriptorSets(VkCommandBuffer commandBuffer,
+	VkPipelineBindPoint pipelineType, VkPipelineLayout pipelineLayout,
+	u32 indexForFirstSet, VkDescriptorSet* descriptorSets, u32 descriptorSetCount,
+	u32* dynamicOffsets, u32 dynamicOffsetCount)
+{
+	vkCmdBindDescriptorSets(commandBuffer, pipelineType, pipelineLayout, indexForFirstSet, descriptorSetCount, descriptorSets, dynamicOffsetCount, dynamicOffsets);
+}
+
+// TODO: WRITE:
+/*
+- create descriptors with texture and uniform buffer
+- free descriptor sets
+- reset descriptor pool
+- destroy pool/set layout/sampler
+*/
+
+/* 6. RENDER PASSES AND FRAMEBUFFERS */
 
 
 static inline void vk_presentImage(VkQueue graphicsQueue, VkSemaphore* semaphoreArray, u32 semaphoreCount, VkSwapchainKHR* swapchainArray, u32 swapchainCount, u32* imageIndexArray)
