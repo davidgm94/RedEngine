@@ -1330,10 +1330,10 @@ static inline VkRenderPass vk_createRenderPass(VkAllocationCallbacks* allocator,
 
 static inline VkFramebuffer vk_createFramebuffer(VkAllocationCallbacks* allocator, VkDevice device,
 	VkRenderPass renderPass, VkImageView* attachments, u32 attachmentCount,
-	VkExtent2D extent, u32 layers)
+	VkExtent2D* extent, u32 layers)
 {
-	u32 width = extent.width;
-	u32 height = extent.height;
+	u32 width = extent->width;
+	u32 height = extent->height;
 	VkFramebufferCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     createInfo.pNext = null;
@@ -1406,7 +1406,7 @@ static inline VkRenderPass vk_prepareRenderPassForGeometryRenderingAndPostproces
     subpassDescriptions[firstSubpass].pPreserveAttachments = null;
 
 	subpassDescriptions[secondSubpass].flags = 0;
-	subpassDescriptions[firstSubpass].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescriptions[secondSubpass].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpassDescriptions[secondSubpass].inputAttachmentCount = 1;
 	VkAttachmentReference inputAttachmentReference1;	
     inputAttachmentReference1.attachment = 0;
@@ -1434,6 +1434,110 @@ static inline VkRenderPass vk_prepareRenderPassForGeometryRenderingAndPostproces
 	VkRenderPass renderPass = vk_createRenderPass(allocator, device, attachments, ARRAYCOUNT(attachments), &subpassDependency, 1, subpassDescriptions, ARRAYCOUNT(subpassDescriptions));
 	return renderPass;
 }
+
+typedef struct
+{
+	VulkanImage colorImage;
+	VulkanImage depthImage;
+	VkRenderPass renderPass;
+	VkFramebuffer framebuffer;
+} render_pass_setup;
+
+static inline render_pass_setup prepareRenderPassAndFramebufferWithColorAndDepthAttachments(VkAllocationCallbacks* allocator, VkDevice device,
+VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties, VkExtent2D* extent)
+{
+	VulkanImage colorImage = vk_create2DImage(allocator, device, physicalDeviceMemoryProperties, VK_FORMAT_R8G8B8A8_UNORM, extent, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT, RENDER_CUBE_FALSE);
+	VulkanImage depthImage = vk_create2DImage(allocator, device, physicalDeviceMemoryProperties, VK_FORMAT_D16_UNORM, extent, 1, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, RENDER_CUBE_FALSE);
+
+	VkAttachmentDescription attachments[2];
+	attachments[0].flags = 0;
+    attachments[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;                   
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	attachments[1].flags = 0;
+	attachments[1].format = VK_FORMAT_D16_UNORM;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+	VkAttachmentReference depthStencilAttachment;
+	depthStencilAttachment.attachment = 1;
+	depthStencilAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	const u32 firstSubpass = 0;
+	const u32 secondSubpass = 1;
+
+	VkSubpassDescription subpassDescription;
+	subpassDescription.flags = 0;
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpassDescription.inputAttachmentCount = 0;
+    subpassDescription.pInputAttachments = null;
+    subpassDescription.colorAttachmentCount = 1;
+	VkAttachmentReference colorAttachmentReference0;
+    colorAttachmentReference0.attachment = 0;
+    colorAttachmentReference0.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    subpassDescription.pColorAttachments = &colorAttachmentReference0;
+    subpassDescription.pResolveAttachments = null;
+    subpassDescription.pDepthStencilAttachment = &depthStencilAttachment;
+    subpassDescription.preserveAttachmentCount = 0;
+    subpassDescription.pPreserveAttachments = null;
+
+	VkSubpassDependency subpassDependency;
+	subpassDependency.srcSubpass = 0;
+	subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	subpassDependency.dependencyFlags = 0;
+
+	VkRenderPass renderPass = vk_createRenderPass(allocator, device, attachments, ARRAYCOUNT(attachments), &subpassDependency, 1, &subpassDescription, 1);
+	VkImageView imageAttachments[] = { colorImage.view, depthImage.view };
+	VkFramebuffer framebuffer = vk_createFramebuffer(allocator, device, renderPass, imageAttachments, ARRAYCOUNT(imageAttachments), extent, 1);
+
+	render_pass_setup renderPassSetup;
+	renderPassSetup.colorImage = colorImage;
+	renderPassSetup.depthImage = depthImage;
+	renderPassSetup.renderPass = renderPass;
+	renderPassSetup.framebuffer = framebuffer;
+
+	return renderPassSetup;
+}
+
+static inline void vk_beginRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, VkFramebuffer framebuffer, VkRect2D renderArea, VkClearValue* clearValues, u32 clearValueCount, VkSubpassContents subpassContents)
+{
+	VkRenderPassBeginInfo beginInfo;
+	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    beginInfo.pNext = null;
+    beginInfo.renderPass = renderPass;
+    beginInfo.framebuffer = framebuffer;
+    beginInfo.renderArea = renderArea;
+    beginInfo.clearValueCount = clearValueCount;
+    beginInfo.pClearValues = clearValues;
+
+	vkCmdBeginRenderPass(commandBuffer, &beginInfo, subpassContents);
+}
+
+static inline void vk_goToNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents subpasssContents)
+{
+	vkCmdNextSubpass(commandBuffer, subpasssContents);
+}
+
+static inline void vk_endRenderPass(VkCommandBuffer commandBuffer)
+{
+	vkCmdEndRenderPass(commandBuffer);
+}
+
+
 
 static inline void vk_presentImage(VkQueue graphicsQueue, VkSemaphore* semaphoreArray, u32 semaphoreCount, VkSwapchainKHR* swapchainArray, u32 swapchainCount, u32* imageIndexArray)
 {
