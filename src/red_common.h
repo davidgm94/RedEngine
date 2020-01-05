@@ -34,6 +34,7 @@ extern "C"
     typedef i64 intptr;
     typedef u64 uintptr;
     typedef unsigned int uint;
+
 	
 //#define INT8_MIN         (-127i8 - 1)
 //#define INT16_MIN        (-32767i16 - 1)

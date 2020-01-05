@@ -1,6 +1,7 @@
 //
 // Created by david on 11/2/19.
 //
+#if ___linux___
 #pragma once
 #include "red_common.h"
 #include "red_platform.h"
@@ -124,3 +125,4 @@ void* platform_alloc(size_t size)
     return memory;
 }
 
+#endif

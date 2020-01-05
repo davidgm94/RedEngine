@@ -1473,9 +1473,6 @@ VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties, VkExtent2D* ex
 	depthStencilAttachment.attachment = 1;
 	depthStencilAttachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	const u32 firstSubpass = 0;
-	const u32 secondSubpass = 1;
-
 	VkSubpassDescription subpassDescription;
 	subpassDescription.flags = 0;
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -1537,6 +1534,212 @@ static inline void vk_endRenderPass(VkCommandBuffer commandBuffer)
 	vkCmdEndRenderPass(commandBuffer);
 }
 
+static inline VkShaderModule vk_createShaderModule(VkAllocationCallbacks* allocator, VkDevice device, const char* sourceCode, u32 sourceCodeSize)
+{
+	VkShaderModuleCreateInfo createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.pNext = null;
+    createInfo.flags = 0;
+    createInfo.codeSize = sourceCodeSize;
+    createInfo.pCode = (const u32*)sourceCode;
+
+	VkShaderModule shaderModule;
+	VKCHECK(vkCreateShaderModule(device, &createInfo, allocator, &shaderModule));
+
+	return shaderModule;
+}
+
+//
+
+static inline VkPipelineLayout vk_createPipelineLayout(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDescriptorSetLayout* setLayouts, u32 setLayoutCount,
+	VkPushConstantRange* pushConstantRanges, u32 pushConstantRangeCount)
+{
+	VkPipelineLayoutCreateInfo createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	createInfo.pNext = null;
+    createInfo.flags = 0;
+    createInfo.setLayoutCount = setLayoutCount;
+    createInfo.pSetLayouts = setLayouts;
+    createInfo.pushConstantRangeCount = pushConstantRangeCount;
+    createInfo.pPushConstantRanges = pushConstantRanges;
+
+	VkPipelineLayout pipelineLayout;
+	VKCHECK(vkCreatePipelineLayout(device, &createInfo, allocator, &pipelineLayout));
+
+	return pipelineLayout;
+}
+
+static inline VkPipelineCache vk_createPipelineCache(VkAllocationCallbacks* allocator, VkDevice device,
+	u8* cacheData, u32 cacheDataSize)
+{
+	VkPipelineCacheCreateInfo createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    createInfo.pNext = null;
+    createInfo.flags = 0;
+	createInfo.initialDataSize = cacheDataSize;
+    createInfo.pInitialData = cacheData;
+
+	VkPipelineCache pipelineCache;
+	VKCHECK(vkCreatePipelineCache(device, &createInfo, allocator, &pipelineCache));
+
+	return pipelineCache;
+}
+
+static inline u8* vk_retrieveDataFromPipelineCache(VkAllocationCallbacks* allocator, VkDevice device, VkPipelineCache pipelineCache)
+{
+	size_t dataSize;
+
+	VKCHECK(vkGetPipelineCacheData(device, pipelineCache, &dataSize, null));
+
+	u8* cacheData = null;
+	cacheData = malloc(dataSize);
+
+	VKCHECK(vkGetPipelineCacheData(device, pipelineCache, &dataSize, cacheData));
+
+	return cacheData;
+}
+
+static inline VkPipelineCache vk_mergePipelineCaches(VkDevice device, VkPipelineCache pipelineCache, const VkPipelineCache* sourceCaches, u32 sourceCacheCount)
+{
+	VKCHECK(vkMergePipelineCaches(device, pipelineCache, sourceCacheCount, sourceCaches));
+	return pipelineCache;
+}
+
+static inline VkPipeline* vk_createGraphicsPipelines(VkAllocationCallbacks* allocator, VkDevice device,
+	VkPipelineCache pipelineCache, u32 pipelineCount, VkPipeline* pipelines)
+{
+	VkGraphicsPipelineCreateInfo createInfos[pipelineCount];
+
+	assert(0);
+	VKCHECK(vkCreateGraphicsPipelines(device, pipelineCache, pipelineCount, createInfos, allocator, pipelines));
+	return pipelines;
+}
+
+static inline VkPipeline* vk_createComputePipelines(VkAllocationCallbacks* allocator, VkDevice device,
+	VkPipelineCache pipelineCache, u32 pipelineCount, VkPipeline* pipelines)
+{
+	VkComputePipelineCreateInfo createInfos[pipelineCount];
+
+	assert(0);
+	VKCHECK(vkCreateComputePipelines(device, pipelineCache, pipelineCount, createInfos, allocator, pipelines));
+	return pipelines;
+}
+
+static inline void vk_bindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineType, VkPipeline pipeline)
+{
+	vkCmdBindPipeline(commandBuffer, pipelineType, pipeline);
+}
+
+typedef struct
+{
+	VkDescriptorSetLayout setLayout;
+	VkPipelineLayout pipelineLayout;
+} pipeline;
+
+static inline pipeline vk_createPipelineLayoutWithCombinedImageSamplerBufferAndPushConstantRanges(VkAllocationCallbacks* allocator, VkDevice device, VkPushConstantRange* pushConstantRanges, u32 pushConstantRangeCount)
+{
+	VkDescriptorSetLayoutBinding bindings[2];
+    bindings[0].binding = 0;
+	bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    bindings[0].descriptorCount = 1;
+	bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[0].pImmutableSamplers = null;
+    bindings[1].binding = 1;
+	bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bindings[1].descriptorCount = 1;
+	bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    bindings[1].pImmutableSamplers = null;
+	
+	VkDescriptorSetLayout setLayout = vk_createDescriptorSetLayout(allocator, device, bindings, ARRAYCOUNT(bindings));
+	VkPipelineLayout pipelineLayout = vk_createPipelineLayout(allocator, device, &setLayout, 1, pushConstantRanges, pushConstantRangeCount);
+
+	pipeline pipeline;
+	pipeline.pipelineLayout = pipelineLayout;
+	pipeline.setLayout = setLayout;
+
+	return pipeline;
+}
+
+// 21
+// 22
+
+// 09 Command Recording and Drawing
+
+static inline void vk_clearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkImageSubresourceRange* imageSubresourceRanges, u32 imageSubresourceRangeCount, VkClearColorValue clearColor)
+{
+	vkCmdClearColorImage(commandBuffer, image, imageLayout, &clearColor, imageSubresourceRangeCount, imageSubresourceRanges);
+}
+
+static inline void vk_clearDepthImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, VkImageSubresourceRange* imageSubresourceRanges, u32 imageSubresourceRangeCount, VkClearDepthStencilValue clearColor)
+{
+	vkCmdClearDepthStencilImage(commandBuffer, image, imageLayout, &clearColor, imageSubresourceRangeCount, imageSubresourceRanges);
+}
+
+static inline void vk_clearRenderPassAttachments(VkCommandBuffer commandBuffer, VkClearAttachment* attachments, u32 attachmentCount, VkClearRect* rects, u32 rectCount)
+{
+	vkCmdClearAttachments(commandBuffer, attachmentCount, attachments, rectCount, rects);
+}
+
+static inline void vk_bindVertexBuffers(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount, VkBuffer* buffers, VkDeviceSize* offsets)
+{
+	vkCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, buffers, offsets);
+}
+
+static inline void vk_bindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize memoryOffset, VkIndexType indexType)
+{
+	vkCmdBindIndexBuffer(commandBuffer, buffer, memoryOffset, indexType);
+}
+
+static inline void vk_sendDataToShader(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkShaderStageFlags pipelineStages, u32 offset, u32 size, void* data)
+{
+	vkCmdPushConstants(commandBuffer, pipelineLayout, pipelineStages, offset, size, data);
+}
+
+static inline void vk_setViewportStateDynamically(VkCommandBuffer commandBuffer, u32 firstViewport, VkViewport* viewports, u32 viewportCount)
+{
+	vkCmdSetViewport(commandBuffer, firstViewport, viewportCount, viewports);
+}
+
+static inline void vk_setScissorStateDynamically(VkCommandBuffer commandBuffer, u32 firstScissor, VkRect2D* scissors, u32 scissorCount)
+{
+	vkCmdSetScissor(commandBuffer, firstScissor, scissorCount, scissors);
+}
+
+static inline void vk_setLineWidthStateDynamically(VkCommandBuffer commandBuffer, float lineWidth)
+{
+	vkCmdSetLineWidth(commandBuffer, lineWidth);
+}
+
+static inline void vk_setDepthBiasStateDynamically(VkCommandBuffer commandBuffer, float constantFactor, float clamp, float slopeFactor)
+{
+	vkCmdSetDepthBias(commandBuffer, constantFactor, clamp, slopeFactor);
+}
+
+static inline void vk_setBlendConstantsStateDynamically(VkCommandBuffer commandBuffer, const float blendConstants[4])
+{
+	vkCmdSetBlendConstants(commandBuffer, blendConstants);
+}
+
+static inline void vk_drawGeometry(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance)
+{
+	vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+static inline void vk_drawIndexedGeometry(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex, u32 vertexOffset, u32 firstInstance)
+{
+	vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+static inline void vk_dispatchComputeWork(VkCommandBuffer commandBuffer, u32 xSize, u32 ySize, u32 zSize)
+{
+	vkCmdDispatch(commandBuffer, xSize, ySize, zSize);
+}
+
+static inline void vk_executeCommandBufferInsideAnother(VkCommandBuffer commandBuffer, VkCommandBuffer* secondaryCommandBuffers, u32 secondaryCBCount)
+{
+	vkCmdExecuteCommands(commandBuffer, secondaryCBCount, secondaryCommandBuffers);
+}
 
 
 static inline void vk_presentImage(VkQueue graphicsQueue, VkSemaphore* semaphoreArray, u32 semaphoreCount, VkSwapchainKHR* swapchainArray, u32 swapchainCount, u32* imageIndexArray)
