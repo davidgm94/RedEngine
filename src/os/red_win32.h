@@ -8,6 +8,7 @@
 // TODO: erase in the future
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 inline PLATFORM_MEMCPY(platform_Memcpy)
 {
@@ -199,6 +200,31 @@ inline PLATFORM_READ_DATA_FROM_FILE(platform_ReadDataFromFile)
 	fclose(fileHandle->platform);
 	fileText[length] = 0;
 	destination = fileText;
+}
+
+typedef struct
+{
+	char* c_str;
+	u64 size;
+} raw_str;
+
+inline raw_str platform_readFile(const char* fileFullPath)
+{
+	FILE* file = fopen(fileFullPath, "rb"); // read binary flag
+	assert(file);
+
+	fseek(file, 0, SEEK_END);
+	long length = ftell(file); // length (bytes) of the shader bytecode
+	assert(length >= 0);
+	fseek(file, 0, SEEK_SET);
+
+	char* fileContent = null;
+	fileContent = malloc(length+1);
+	size_t rc = fread(&fileContent[0], 1, length, file);
+	assert(rc == (size_t)(length));
+	fclose(file);
+
+	return (raw_str) { fileContent, length };
 }
 
 inline PLATFORM_FILE_ERROR(platform_FileError);

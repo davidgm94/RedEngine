@@ -118,6 +118,24 @@ extern "C"
 #endif
 #define null nullptr
 
+    typedef struct
+    {
+        u32 width;
+        u32 height;
+    } os_window_dimension;
+
+    typedef enum
+    {
+        DEBUG,
+        WARNING,
+        ERROR,
+        CRITICAL
+    } RED_LOG_SEVERITY;
+
+#define SHOW_DEBUG 1
+#define SHOW_WARNING 1
+#define SHOW_ERROR 1
+#define SHOW_CRITICAL 1
 #ifdef __cplusplus
 }
 #endif

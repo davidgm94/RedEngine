@@ -22,13 +22,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	vulkan_renderer vk;
 	QPC(startVk);
-	vk_load(&vk, (os_window_handler*)&win32_vulkan_dependencies);
+	vk_load(&vk, (os_window_handler*)&win32_vulkan_dependencies, (os_window_dimension*)&initialResolution);
 	QPC(endVk);
 
-	printf("%f", (float)(endVk - startVk) / win32.timer.performanceFrequency);
+	printf("Vulkan initialized in %f ms.\n", (float)(endVk - startVk) / win32.timer.performanceFrequency);
 
 	while (platform_Running(&win32.applicationState))
 	{
+		vk_render(&vk);
 		platform_HandleEvents(win32.handles.window);
 	}
 

@@ -27,5 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="src\graphics\shaders\triangle.vert" />
+    <None Include="src\graphics\shaders\triangle.frag" />
   </ItemGroup>
 </Project>
