@@ -219,17 +219,19 @@ inline raw_str platform_readFile(const char* fileFullPath)
 	fseek(file, 0, SEEK_SET);
 
 	char* fileContent = null;
-	fileContent = malloc(length+1);
+	fileContent = (char*)malloc(length + 1);
 	size_t rc = fread(&fileContent[0], 1, length, file);
 	assert(rc == (size_t)(length));
 	fclose(file);
+#if _DEBUG
+	printf("FILE READ:\n%s", fileContent);
+#endif
 
 	return (raw_str) { fileContent, length };
 }
 
 inline PLATFORM_FILE_ERROR(platform_FileError);
 inline PLATFORM_JOB_SYSTEM_CALLBACK(platform_JobSystemCallback);
-
 
 inline u32 safeTruncateU64(u64 value)
 {

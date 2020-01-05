@@ -5,9 +5,9 @@
 #include "graphics/opengl.h"
 #include "graphics/vulkan.h"
 
-
 void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension);
 void vk_renderTriangle(vulkan_renderer* vk);
+
 static inline void vk_load(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension)
 {
 	vk_loadTriangle(vk, window, windowDimension);
@@ -20,12 +20,24 @@ static inline void vk_render(vulkan_renderer* vk)
 
 static inline void vk_destroy(vulkan_renderer* vk)
 {
+	vkDestroySemaphore(vk->device, vk->imageAcquireSemaphore, vk->allocator);
+	vkDestroySemaphore(vk->device, vk->imageReleaseSemaphore, vk->allocator);
 	vkFreeCommandBuffers(vk->device, vk->commandPools[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], IMAGE_COUNT, vk->commandBuffers);
-	vkDestroyCommandPool(vk->device, vk->commandPools[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], vk->allocator);
+	vkDestroyPipeline(vk->device, vk->graphicsPipeline, vk->allocator);
+	vkDestroyPipelineLayout(vk->device, vk->pipelineLayout, vk->allocator);
+	vkDestroyRenderPass(vk->device, vk->renderPass, vk->allocator);
+	for (int i = 0; i < IMAGE_COUNT; i++)
+	{
+		vkDestroyCommandPool(vk->device, vk->commandPools[i], vk->allocator);
+		vkDestroyFramebuffer(vk->device, vk->framebuffers[i], vk->allocator);
+		vkDestroyImageView(vk->device, vk->swapchainImageViews[i], vk->allocator);
+	}
+	vkDestroyShaderModule(vk->device, vk->shaders.vs, vk->allocator);
+	vkDestroyShaderModule(vk->device, vk->shaders.fs, vk->allocator);
 	vkDestroySwapchainKHR(vk->device, vk->swapchain, vk->allocator);
     vkDestroyDevice(vk->device, vk->allocator);
     vkDestroySurfaceKHR(vk->instance, vk->surface, vk->allocator);
-#if _DEBUG
+#if NDEBUG == 0
     vkDestroyDebugReportCallbackEXT(vk->instance, vk->debugCallback, vk->allocator);
 #endif
     vkDestroyInstance(vk->instance, vk->allocator);
@@ -161,6 +173,7 @@ void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_d
 	VkDeviceQueueCreateInfo queueCreateInfoArray[ARRAYCOUNT(availableQueues)];
 	vk_setupQueueCreation(queueCreateInfoArray, &vk->swapchainProperties.queueFamily, queuesToCreate, priorities);
 	vk->device = vk_createDevice(vk->allocator, vk->physicalDevice, vk->instance, queueCreateInfoArray, ARRAYCOUNT(queueCreateInfoArray));
+	vk->renderPass = vk_setupRenderPass(vk->allocator, vk->device, vk->swapchainRequirements.surfaceFormat.format);
 	vk_getDeviceQueues(vk->device, vk->swapchainProperties.queueFamily.indices, vk->queues);
     vk->swapchain = vk_createSwapchain(vk->allocator, vk->device, vk->surface, &vk->swapchainRequirements, nullptr);
 	vk_getSwapchainImages(vk->swapchainImages, vk->device, vk->swapchain);
@@ -169,17 +182,16 @@ void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_d
 	vk_createImageMemoryBarriers(vk->beginRenderBarriers, vk->swapchainImages, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	vk_createImageMemoryBarriers(vk->endRenderBarriers, vk->swapchainImages, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	vk->renderPass = vk_setupRenderPass(vk->allocator, vk->device, vk->swapchainRequirements.surfaceFormat.format);
 	raw_str vsFile = platform_readFile("src/graphics/shaders/triangle.vert.spv");
 	raw_str fsFile = platform_readFile("src/graphics/shaders/triangle.frag.spv");
-	VkShaderModule vs = vk_createShaderModule(vk->allocator, vk->device, vsFile.c_str, vsFile.size);
-	VkShaderModule fs = vk_createShaderModule(vk->allocator, vk->device, vsFile.c_str, fsFile.size);
+	vk->shaders.vs = vk_createShaderModule(vk->allocator, vk->device, vsFile.c_str, vsFile.size);
+	vk->shaders.fs = vk_createShaderModule(vk->allocator, vk->device, fsFile.c_str, fsFile.size);
 	free(vsFile.c_str);
 	free(fsFile.c_str);
 
 	VkPipelineCache pipelineCache = null;
 	vk->pipelineLayout = vk_createPipelineLayout(vk->allocator, vk->device, null, 0, null, 0);
-	vk->graphicsPipeline = vk_createGraphicsPipeline(vk->allocator, vk->device, pipelineCache, vk->renderPass, vs, fs, vk->pipelineLayout);
+	vk->graphicsPipeline = vk_createGraphicsPipeline(vk->allocator, vk->device, pipelineCache, vk->renderPass, vk->shaders.vs, vk->shaders.fs, vk->pipelineLayout);
 
 	// COMMANDS AND QUEUES
 	vk->imageAcquireSemaphore = vk_createSemaphore(vk->allocator, vk->device);
@@ -198,10 +210,10 @@ void vk_renderTriangle(vulkan_renderer* vk)
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, null, 0, null, 1, &vk->beginRenderBarriers[currentImageIndex]);
 
 	VkClearColorValue color;
-	color.float32[0] = 1.0f;
-	color.float32[1] = 1.0f;
-	color.float32[2] = 1.0f;
-	color.float32[3] = 1.0f;
+	color.float32[0] = 0.5f;
+	color.float32[1] = 0.5f;
+	color.float32[2] = 0.5f;
+	color.float32[3] = 0.5f;
 	VkClearValue clearColor = { color };
 	
 	VkRect2D renderArea;
@@ -215,7 +227,7 @@ void vk_renderTriangle(vulkan_renderer* vk)
     viewport.x = 0;
     viewport.y = (float)vk->extent.height;
     viewport.width = (float)vk->extent.width;
-    viewport.height = (float)- vk->extent.height;
+    viewport.height = - (float)vk->extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -237,5 +249,6 @@ void vk_renderTriangle(vulkan_renderer* vk)
 	vk_submitCommandsToQueue(&vk->imageAcquireSemaphore, 1, &submitStageMask, vk->queues[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], &commandBuffer, 1, &vk->imageReleaseSemaphore, 1, null);
 
 	vk_presentImage(vk->queues[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS], &vk->imageReleaseSemaphore, 1, &vk->swapchain, 1, &currentImageIndex);
-}
 
+	VKCHECK(vkDeviceWaitIdle(vk->device));
+}

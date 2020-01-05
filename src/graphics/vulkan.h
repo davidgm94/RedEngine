@@ -31,7 +31,7 @@ static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
     applicationInfo.applicationVersion = 1;
     applicationInfo.pEngineName = "Red";
     applicationInfo.engineVersion = 1;
-    applicationInfo.apiVersion = 0;
+    applicationInfo.apiVersion = VK_API_VERSION_1_1;
 	    
     u32 instanceLayerCount = 0;
     VKCHECK(vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr));
@@ -712,8 +712,8 @@ static inline VkImageMemoryBarrier vk_createImageMemoryBarrier(VkImage image, Vk
 	imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // TODO: change
     imageBarrier.subresourceRange.baseMipLevel = 0; // TODO: change
     imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS; // TODO: change
-    imageBarrier.subresourceRange.baseArrayLayer = VK_REMAINING_ARRAY_LAYERS; // TODO: change
-    imageBarrier.subresourceRange.layerCount = 0; // TODO: change
+    imageBarrier.subresourceRange.baseArrayLayer = 0; // TODO: change
+    imageBarrier.subresourceRange.layerCount = 1; // TODO: change
 
 	return imageBarrier;
 }
@@ -1989,6 +1989,11 @@ static inline void vk_setupQueueCreation(VkDeviceQueueCreateInfo* queueCreateInf
 
 typedef struct
 {
+	VkShaderModule vs;
+	VkShaderModule fs;
+} VulkanTraditionalPipeline;
+typedef struct
+{
 	// TODO: temporary patch
     VkAllocationCallbacks* allocator;
 	VkAllocationCallbacks allocator_;
@@ -2008,6 +2013,7 @@ typedef struct
 	VkFramebuffer framebuffers[IMAGE_COUNT];
 	VkImageMemoryBarrier beginRenderBarriers[IMAGE_COUNT];
 	VkImageMemoryBarrier endRenderBarriers[IMAGE_COUNT];
+	VulkanTraditionalPipeline shaders;
 	VkRenderPass renderPass;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
