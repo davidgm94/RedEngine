@@ -1437,11 +1437,11 @@ static inline void vk_updateDescriptorSets()
 }
 
 static inline void vk_bindDescriptorSets(VkCommandBuffer commandBuffer,
-	VkPipelineBindPoint pipelineType, VkPipelineLayout pipelineLayout,
+	VkPipelineBindPoint pipelineType, VkPipelineLayout graphicsPipelineLayout,
 	u32 indexForFirstSet, VkDescriptorSet* descriptorSets, u32 descriptorSetCount,
 	u32* dynamicOffsets, u32 dynamicOffsetCount)
 {
-	vkCmdBindDescriptorSets(commandBuffer, pipelineType, pipelineLayout, indexForFirstSet, descriptorSetCount, descriptorSets, dynamicOffsetCount, dynamicOffsets);
+	vkCmdBindDescriptorSets(commandBuffer, pipelineType, graphicsPipelineLayout, indexForFirstSet, descriptorSetCount, descriptorSets, dynamicOffsetCount, dynamicOffsets);
 }
 
 // TODO: WRITE:
@@ -1501,12 +1501,12 @@ static inline VkFramebuffer vk_createFramebuffer(VkAllocationCallbacks* allocato
 }
 
 static inline void vk_createFramebuffers(VkAllocationCallbacks* allocator, VkDevice device,
-	VkFramebuffer* framebuffers, VkRenderPass renderPass, VkImageView* attachments, u32 attachmentCount,
+	VkFramebuffer* swapchainFramebuffers, VkRenderPass renderPass, VkImageView* attachments, u32 attachmentCount,
 	VkExtent2D* extent)
 {
 	for (int i = 0; i < IMAGE_COUNT; i++)
 	{
-		framebuffers[i] = vk_createFramebuffer(allocator, device, renderPass, &attachments[i], 1, extent, 1);
+		swapchainFramebuffers[i] = vk_createFramebuffer(allocator, device, renderPass, &attachments[i], 1, extent, 1);
 	}
 }
 
@@ -1721,10 +1721,10 @@ static inline VkPipelineLayout vk_createPipelineLayout(VkAllocationCallbacks* al
     createInfo.pushConstantRangeCount = pushConstantRangeCount;
     createInfo.pPushConstantRanges = pushConstantRanges;
 
-	VkPipelineLayout pipelineLayout;
-	VKCHECK(vkCreatePipelineLayout(device, &createInfo, allocator, &pipelineLayout));
+	VkPipelineLayout graphicsPipelineLayout;
+	VKCHECK(vkCreatePipelineLayout(device, &createInfo, allocator, &graphicsPipelineLayout));
 
-	return pipelineLayout;
+	return graphicsPipelineLayout;
 }
 
 static inline VkPipelineCache vk_createPipelineCache(VkAllocationCallbacks* allocator, VkDevice device,
@@ -1791,7 +1791,7 @@ static inline void vk_bindPipeline(VkCommandBuffer commandBuffer, VkPipelineBind
 typedef struct
 {
 	VkDescriptorSetLayout setLayout;
-	VkPipelineLayout pipelineLayout;
+	VkPipelineLayout graphicsPipelineLayout;
 } pipeline;
 
 static inline pipeline vk_createPipelineLayoutWithCombinedImageSamplerBufferAndPushConstantRanges(VkAllocationCallbacks* allocator, VkDevice device, VkPushConstantRange* pushConstantRanges, u32 pushConstantRangeCount)
@@ -1809,10 +1809,10 @@ static inline pipeline vk_createPipelineLayoutWithCombinedImageSamplerBufferAndP
     bindings[1].pImmutableSamplers = null;
 	
 	VkDescriptorSetLayout setLayout = vk_createDescriptorSetLayout(allocator, device, bindings, ARRAYCOUNT(bindings));
-	VkPipelineLayout pipelineLayout = vk_createPipelineLayout(allocator, device, &setLayout, 1, pushConstantRanges, pushConstantRangeCount);
+	VkPipelineLayout graphicsPipelineLayout = vk_createPipelineLayout(allocator, device, &setLayout, 1, pushConstantRanges, pushConstantRangeCount);
 
 	pipeline pipeline;
-	pipeline.pipelineLayout = pipelineLayout;
+	pipeline.graphicsPipelineLayout = graphicsPipelineLayout;
 	pipeline.setLayout = setLayout;
 
 	return pipeline;
@@ -1848,9 +1848,9 @@ static inline void vk_bindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer bu
 	vkCmdBindIndexBuffer(commandBuffer, buffer, memoryOffset, indexType);
 }
 
-static inline void vk_sendDataToShader(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkShaderStageFlags pipelineStages, u32 offset, u32 size, void* data)
+static inline void vk_sendDataToShader(VkCommandBuffer commandBuffer, VkPipelineLayout graphicsPipelineLayout, VkShaderStageFlags pipelineStages, u32 offset, u32 size, void* data)
 {
-	vkCmdPushConstants(commandBuffer, pipelineLayout, pipelineStages, offset, size, data);
+	vkCmdPushConstants(commandBuffer, graphicsPipelineLayout, pipelineStages, offset, size, data);
 }
 
 static inline void vk_setViewportStateDynamically(VkCommandBuffer commandBuffer, u32 firstViewport, VkViewport* viewports, u32 viewportCount)
@@ -2010,12 +2010,12 @@ typedef struct
     VkSwapchainKHR swapchain;
 	VkImage swapchainImages[IMAGE_COUNT];
 	VkImageView swapchainImageViews[IMAGE_COUNT];
-	VkFramebuffer framebuffers[IMAGE_COUNT];
+	VkFramebuffer swapchainFramebuffers[IMAGE_COUNT];
 	VkImageMemoryBarrier beginRenderBarriers[IMAGE_COUNT];
 	VkImageMemoryBarrier endRenderBarriers[IMAGE_COUNT];
 	VulkanTraditionalPipeline shaders;
 	VkRenderPass renderPass;
-	VkPipelineLayout pipelineLayout;
+	VkPipelineLayout graphicsPipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkCommandPool commandPools[QUEUE_FAMILY_INDEX_COUNT];
 	VkCommandBuffer commandBuffers[IMAGE_COUNT];
