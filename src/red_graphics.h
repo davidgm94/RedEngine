@@ -364,10 +364,10 @@ void vk_renderModel(vulkan_renderer* vk)
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, null, 0, null, 1, &vk->beginRenderBarriers[currentImageIndex]);
 
 	VkClearColorValue color;
-	color.float32[0] = 0.5f;
-	color.float32[1] = 0.5f;
-	color.float32[2] = 0.5f;
-	color.float32[3] = 0.5f;
+	color.float32[0] = 0.0f;
+	color.float32[1] = 0.0f;
+	color.float32[2] = 0.0f;
+	color.float32[3] = 0.0f;
 	VkClearValue clearColor = { color };
 	
 	VkRect2D renderArea;
