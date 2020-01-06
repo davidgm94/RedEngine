@@ -76,6 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\external\meshoptimizer\fast_obj.h" />
     <ClInclude Include="src\graphics\d3d\d3d11.h" />
     <ClInclude Include="src\graphics\d3d\d3d12.h" />
     <ClInclude Include="src\graphics\d3d\d3dcommon.h" />
@@ -91,6 +92,7 @@
     <ClInclude Include="src\red_platform.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\external\meshoptimizer\indexgenerator.c" />
     <ClCompile Include="src\external\volk\volk.c" />
     <ClCompile Include="src\os\red_win32.c" />
     <ClCompile Include="src\red_engine_linux.c" />

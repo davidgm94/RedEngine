@@ -7,7 +7,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../tools/fast_obj.h"
 
 static unsigned int hashUpdate4(unsigned int h, const unsigned char* key, size_t len)
 {

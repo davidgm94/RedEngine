@@ -14,6 +14,7 @@
     <ClInclude Include="src\os\red_win32.h" />
     <ClInclude Include="src\os\linux\args.h" />
     <ClInclude Include="src\os\linux\timer.h" />
+    <ClInclude Include="src\external\meshoptimizer\fast_obj.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\red_engine_linux.c" />
@@ -21,6 +22,7 @@
     <ClCompile Include="src\red_platform.c" />
     <ClCompile Include="src\os\red_win32.c" />
     <ClCompile Include="src\external\volk\volk.c" />
+    <ClCompile Include="src\external\meshoptimizer\indexgenerator.c" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
