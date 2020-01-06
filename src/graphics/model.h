@@ -3,7 +3,7 @@
 typedef struct
 {
 	float vx, vy, vz;
-	u8 nx, ny, nz, nw;
+	float nx, ny, nz, nw;
 	float tu, tv;
 } Vertex;
 
@@ -73,12 +73,12 @@ static inline Mesh loadMesh_fast(const char* path)
 	fast_vector_u32 remap;
 	fast_vector_allocate(u32, remap, totalIndices);
 
-	size_t totalVertices = meshopt_generateVertexRemap(&remap.data[0], nullptr, totalIndices, &vertices.data[0], totalIndices, sizeof(Vertex));
+	size_t totalVertices = meshopt_generateVertexRemap(&remap.data[0], null, totalIndices, &vertices.data[0], totalIndices, sizeof(Vertex));
 	
 	fast_vector_allocate(u32, result.indices, totalIndices);
-	meshopt_remapIndexBuffer(&result.indices.data[0], nullptr, totalIndices, &remap.data[0]);
-
 	fast_vector_allocate(Vertex, result.vertices, totalVertices);
+
+	meshopt_remapIndexBuffer(&result.indices.data[0], nullptr, totalIndices, &remap.data[0]);
 	meshopt_remapVertexBuffer(&result.vertices.data[0], &vertices.data[0], totalIndices, sizeof(Vertex), &remap.data[0]);
 
 	return result;

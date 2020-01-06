@@ -105,8 +105,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
-    <None Include="src\graphics\shaders\model.frag" />
-    <None Include="src\graphics\shaders\model.vert" />
+    <CustomBuild Include="src\graphics\shaders\model.frag">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).frag.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).frag.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).frag.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).frag.spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="src\graphics\shaders\model.vert">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Outputs>
+    </CustomBuild>
     <None Include="src\graphics\shaders\triangle.frag" />
     <None Include="src\graphics\shaders\triangle.vert" />
   </ItemGroup>

@@ -32,7 +32,9 @@
     <None Include=".gitignore" />
     <None Include="src\graphics\shaders\triangle.vert" />
     <None Include="src\graphics\shaders\triangle.frag" />
-    <None Include="src\graphics\shaders\model.vert" />
-    <None Include="src\graphics\shaders\model.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\graphics\shaders\model.vert" />
+    <CustomBuild Include="src\graphics\shaders\model.frag" />
   </ItemGroup>
 </Project>
