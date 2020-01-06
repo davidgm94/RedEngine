@@ -51,7 +51,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)\src\external\glad\include;$(SolutionDir)src\external\volk</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)\src\external\meshoptimizer;$(SolutionDir)\src\external\glad\include;$(SolutionDir)src\external\volk</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -80,6 +80,7 @@
     <ClInclude Include="src\graphics\d3d\d3d11.h" />
     <ClInclude Include="src\graphics\d3d\d3d12.h" />
     <ClInclude Include="src\graphics\d3d\d3dcommon.h" />
+    <ClInclude Include="src\graphics\model.h" />
     <ClInclude Include="src\graphics\opengl.h" />
     <ClInclude Include="src\graphics\vulkan.h" />
     <ClInclude Include="src\os\linux\args.h" />
@@ -92,7 +93,7 @@
     <ClInclude Include="src\red_platform.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\external\meshoptimizer\indexgenerator.c" />
+    <ClCompile Include="src\external\meshoptimizer\indexgenerator.h" />
     <ClCompile Include="src\external\volk\volk.c" />
     <ClCompile Include="src\os\red_win32.c" />
     <ClCompile Include="src\red_engine_linux.c" />
@@ -104,6 +105,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="src\graphics\shaders\model.frag" />
+    <None Include="src\graphics\shaders\model.vert" />
     <None Include="src\graphics\shaders\triangle.frag" />
     <None Include="src\graphics\shaders\triangle.vert" />
   </ItemGroup>

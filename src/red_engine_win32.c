@@ -29,8 +29,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	while (platform_Running(&win32.applicationState))
 	{
+		//QPC(startFrame);
 		vk_render(&vk);
 		platform_HandleEvents(win32.handles.window);
+		//QPC(endFrame);
+		//printf("Frame time: %.02f ms.", (float)(endFrame - startFrame) / win32.timer.performanceFrequency);
 	}
 
 	vk_destroy(&vk);

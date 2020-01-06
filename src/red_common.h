@@ -132,6 +132,12 @@ extern "C"
         CRITICAL
     } RED_LOG_SEVERITY;
 
+#define FAST_VECTOR(type) typedef struct { type* data; size_t size; } fast_vector_##type
+    FAST_VECTOR(u32);
+#define fast_vector_malloc(type, count) (type*)malloc(sizeof(type) * count)
+#define fast_vector_allocate(type, name, count) name.data = fast_vector_malloc(type, count); name.size = count
+#define fast_vector_deallocate(name) free(name.data); name.data = null; name.size = 0
+
 #define SHOW_DEBUG 1
 #define SHOW_WARNING 1
 #define SHOW_ERROR 1

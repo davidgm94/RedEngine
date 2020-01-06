@@ -15,6 +15,7 @@
     <ClInclude Include="src\os\linux\args.h" />
     <ClInclude Include="src\os\linux\timer.h" />
     <ClInclude Include="src\external\meshoptimizer\fast_obj.h" />
+    <ClInclude Include="src\graphics\model.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\red_engine_linux.c" />
@@ -22,7 +23,7 @@
     <ClCompile Include="src\red_platform.c" />
     <ClCompile Include="src\os\red_win32.c" />
     <ClCompile Include="src\external\volk\volk.c" />
-    <ClCompile Include="src\external\meshoptimizer\indexgenerator.c" />
+    <ClCompile Include="src\external\meshoptimizer\indexgenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -31,5 +32,7 @@
     <None Include=".gitignore" />
     <None Include="src\graphics\shaders\triangle.vert" />
     <None Include="src\graphics\shaders\triangle.frag" />
+    <None Include="src\graphics\shaders\model.vert" />
+    <None Include="src\graphics\shaders\model.frag" />
   </ItemGroup>
 </Project>

@@ -268,13 +268,24 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
 
 	const char* enabledExtensions[] =
 	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
+		VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
+		VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
 	};
 
 
+	VkPhysicalDeviceFeatures2 features = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+
+	VkPhysicalDevice16BitStorageFeatures features16 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES };
+	features16.storageBuffer16BitAccess = true;
+
+	VkPhysicalDevice8BitStorageFeaturesKHR features8 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR };
+	features8.storageBuffer8BitAccess = true;
+
 	VkDeviceCreateInfo createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = null;
+    createInfo.pNext = &features;
     createInfo.flags = 0;
     createInfo.queueCreateInfoCount = queueCreateInfoCount;
     createInfo.pQueueCreateInfos = queueCreateInfoArray;
@@ -283,6 +294,9 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
     createInfo.enabledExtensionCount = ARRAYCOUNT(enabledExtensions);
     createInfo.ppEnabledExtensionNames = enabledExtensions;
     createInfo.pEnabledFeatures = null;
+	features.pNext = &features16;
+	features16.pNext = &features8;
+	features8.pNext = null;
 	
 	VkDevice device;
 	VKCHECK(vkCreateDevice(physicalDevice, &createInfo, allocator, &device));
@@ -1340,6 +1354,34 @@ typedef struct
 	VkDeviceMemory memory;
 } VulkanBufferNoView;
 
+typedef struct
+{
+	VkBuffer buffer;
+	VkDeviceMemory memory;
+	void* data;
+	size_t size;
+} VulkanBufferWithData;
+
+static inline VulkanBufferWithData vk_createVertexBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, physicalDeviceMemoryProperties);
+
+	return (VulkanBufferWithData) { buffer, memory, null, size };
+}
+
+static inline VulkanBufferWithData vk_createIndexBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, physicalDeviceMemoryProperties);
+
+	return (VulkanBufferWithData) { buffer, memory, null, size };
+}
+
 static inline VulkanBufferNoView vk_createUniformBuffer(VkAllocationCallbacks* allocator, VkDevice device,
 	VkDeviceSize size, VkBufferUsageFlags usage,
 	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
@@ -1373,14 +1415,12 @@ static inline VulkanImage vk_createInputAttachment(VkAllocationCallbacks* alloca
 }
 
 static inline VkDescriptorSetLayout vk_createDescriptorSetLayout(VkAllocationCallbacks* allocator, VkDevice device,
-	VkDescriptorSetLayoutBinding* bindingArray, u32 bindingCount)
+	VkDescriptorSetLayoutBinding* bindingArray, u32 bindingCount, VkDescriptorSetLayoutCreateFlags flags)
 {
 	VkDescriptorSetLayoutCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     createInfo.pNext = null;
-    createInfo.flags = 0; // TODO: investigate this further:
-    // VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR = 0x00000001,
-    // VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT = 0x00000002,
+    createInfo.flags = flags;
 	createInfo.bindingCount = bindingCount;
     createInfo.pBindings = bindingArray;
 
@@ -1808,7 +1848,7 @@ static inline pipeline vk_createPipelineLayoutWithCombinedImageSamplerBufferAndP
 	bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     bindings[1].pImmutableSamplers = null;
 	
-	VkDescriptorSetLayout setLayout = vk_createDescriptorSetLayout(allocator, device, bindings, ARRAYCOUNT(bindings));
+	VkDescriptorSetLayout setLayout = vk_createDescriptorSetLayout(allocator, device, bindings, ARRAYCOUNT(bindings), 0);
 	VkPipelineLayout graphicsPipelineLayout = vk_createPipelineLayout(allocator, device, &setLayout, 1, pushConstantRanges, pushConstantRangeCount);
 
 	pipeline pipeline;
@@ -1991,6 +2031,8 @@ typedef struct
 {
 	VkShaderModule vs;
 	VkShaderModule fs;
+	VulkanBufferWithData vb;
+	VulkanBufferWithData ib;
 } VulkanTraditionalPipeline;
 typedef struct
 {
@@ -2013,8 +2055,9 @@ typedef struct
 	VkFramebuffer swapchainFramebuffers[IMAGE_COUNT];
 	VkImageMemoryBarrier beginRenderBarriers[IMAGE_COUNT];
 	VkImageMemoryBarrier endRenderBarriers[IMAGE_COUNT];
-	VulkanTraditionalPipeline shaders;
+	VulkanTraditionalPipeline traditionalPipeline;
 	VkRenderPass renderPass;
+	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout graphicsPipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkCommandPool commandPools[QUEUE_FAMILY_INDEX_COUNT];
@@ -2022,5 +2065,6 @@ typedef struct
 	VkSemaphore imageAcquireSemaphore;
 	VkSemaphore imageReleaseSemaphore;
 	VkExtent2D extent;
+	Mesh currentMesh;
 } vulkan_renderer;
 

@@ -196,7 +196,7 @@ size_t meshopt_generateVertexRemap(unsigned int* destination, const unsigned int
 	VertexHasher hasher = {(const unsigned char*)(vertices), vertex_size, vertex_size};
 
 	size_t table_size = hashBuckets(vertex_count);
-	unsigned int* table = malloc(sizeof(unsigned int) * table_size);
+	unsigned int* table = (unsigned int*) malloc(sizeof(unsigned int) * table_size);
 	memset(table, -1, table_size * sizeof(unsigned int));
 
 	unsigned int next_vertex = 0;
@@ -247,7 +247,7 @@ size_t meshopt_generateVertexRemapMulti(unsigned int* destination, const unsigne
 	VertexStreamHasher hasher = {streams, stream_count};
 
 	size_t table_size = hashBuckets(vertex_count);
-	unsigned int* table = malloc(sizeof(unsigned int) * table_size);
+	unsigned int* table = (unsigned int*) malloc(sizeof(unsigned int) * table_size);
 	memset(table, -1, table_size * sizeof(unsigned int));
 
 	unsigned int next_vertex = 0;
@@ -288,7 +288,7 @@ void meshopt_remapVertexBuffer(void* destination, const void* vertices, size_t v
 	// support in-place remap
 	if (destination == vertices)
 	{
-		unsigned char* vertices_copy = malloc(sizeof(unsigned char) * (vertex_count * vertex_size));
+		unsigned char* vertices_copy = (unsigned char*) malloc(sizeof(unsigned char) * (vertex_count * vertex_size));
 		memcpy(vertices_copy, vertices, vertex_count * vertex_size);
 		vertices = vertices_copy;
 	}
@@ -324,13 +324,13 @@ void meshopt_generateShadowIndexBuffer(unsigned int* destination, const unsigned
 	assert(vertex_size > 0 && vertex_size <= 256);
 	assert(vertex_size <= vertex_stride);
 
-	unsigned int* remap = malloc(sizeof(unsigned int) * vertex_count);
+	unsigned int* remap = (unsigned int*) malloc(sizeof(unsigned int) * vertex_count);
 	memset(remap, -1, vertex_count * sizeof(unsigned int));
 
 	VertexHasher hasher = {(const unsigned char*)(vertices), vertex_size, vertex_stride};
 
 	size_t table_size = hashBuckets(vertex_count);
-	unsigned int* table = malloc(sizeof(unsigned int) * table_size);
+	unsigned int* table = (unsigned int*)malloc(sizeof(unsigned int) * table_size);
 	memset(table, -1, table_size * sizeof(unsigned int));
 
 	for (size_t i = 0; i < index_count; ++i)
@@ -364,13 +364,13 @@ void meshopt_generateShadowIndexBufferMulti(unsigned int* destination, const uns
 		assert(streams[i].size <= streams[i].stride);
 	}
 
-	unsigned int* remap = malloc(sizeof(unsigned int) * vertex_count);
+	unsigned int* remap = (unsigned int*)malloc(sizeof(unsigned int) * vertex_count);
 	memset(remap, -1, vertex_count * sizeof(unsigned int));
 
 	VertexStreamHasher hasher = {streams, stream_count};
 
 	size_t table_size = hashBuckets(vertex_count);
-	unsigned int* table = malloc(sizeof(unsigned int) * table_size);
+	unsigned int* table = (unsigned int*)malloc(sizeof(unsigned int) * table_size);
 	memset(table, -1, table_size * sizeof(unsigned int));
 
 	for (size_t i = 0; i < index_count; ++i)
