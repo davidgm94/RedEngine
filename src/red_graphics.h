@@ -1,5 +1,5 @@
 #pragma once
-#include "red_os.h"
+#include "os/red_platform.h"
 #include "graphics/model.h"
 #include "graphics/d3d/d3d11.h"
 #include "graphics/d3d/d3d12.h"

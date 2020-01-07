@@ -1,5 +1,5 @@
 #pragma once
-#include "../red_os.h"
+#include "../os/red_platform.h"
 
 //void win32_initOpenGL(HWND window)
 //{
@@ -42,10 +42,10 @@
 //	HGLRC openGlRenderingContext = wglCreateContext(DC);
 //	if (wglMakeCurrent(DC, openGlRenderingContext))
 //	{
-//		printf("OpenGL initialized\n");
+//		os_printf("OpenGL initialized\n");
 //	}
 //	else
 //	{
-//		printf("OpenGL failed to initialize\n");
+//		os_printf("OpenGL failed to initialize\n");
 //	}
 //}

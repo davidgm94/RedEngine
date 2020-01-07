@@ -1,5 +1,5 @@
 #include "../red_common.h"
-#include "../red_platform.h"
+#include "../os/red_platform.h"
 #include <volk.h>
 #if NDEBUG
 #define VKCHECK(result) (result)
@@ -147,9 +147,9 @@ VkBool32 vk_debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEX
 
     // Display message to default output (console/logcat)
     char debugMessage[4096];
-    sprintf(debugMessage, "%s [%s] Code %d:%s\n", prefix, pLayerPrefix, messageCode, pMessage);
+    os_sprintf(debugMessage, "%s [%s] Code %d:%s\n", prefix, pLayerPrefix, messageCode, pMessage);
 
-	printf("%s", debugMessage);
+	os_printf("%s", debugMessage);
 #ifdef _WIN64
     OutputDebugStringA(debugMessage);
 #endif
@@ -246,24 +246,24 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
 {
 	u32 extensionCount = 0;
 	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr));
-	printf("Device extension count: %d\n", extensionCount);
+	os_printf("Device extension count: %d\n", extensionCount);
 	VkExtensionProperties extensions[extensionCount];
 	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, &extensions[0]));
-	printf("DEVICE EXTENSIONS\n\n");
+	os_printf("DEVICE EXTENSIONS\n\n");
 	for (int i = 0; i < extensionCount; i++)
 	{
-		printf("%s : %u\n", extensions[i].extensionName, extensions[i].specVersion);
+		os_printf("%s : %u\n", extensions[i].extensionName, extensions[i].specVersion);
 	}
 
 	u32 layerCount = 0;
 	VKCHECK(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &layerCount, nullptr));
-	printf("Device layer count: %d\n", layerCount);
+	os_printf("Device layer count: %d\n", layerCount);
 	VkLayerProperties layers[layerCount];
 	VKCHECK(vkEnumerateDeviceLayerProperties(physicalDevice, &layerCount, &layers[0]));
-	printf("DEVICE LAYERS\n\n");
+	os_printf("DEVICE LAYERS\n\n");
 	for (int i = 0; i < layerCount; i++) 
 	{
-		printf("%s [%u]: %s\n", layers[i].layerName, layers[i].specVersion, layers[i].description);
+		os_printf("%s [%u]: %s\n", layers[i].layerName, layers[i].specVersion, layers[i].description);
 	}
 
 	const char* enabledExtensions[] =

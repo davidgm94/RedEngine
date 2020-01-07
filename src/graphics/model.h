@@ -29,7 +29,7 @@ static inline Mesh loadMesh_fast(const char* path)
 
 	//vector<Vertex> vertices(totalIndices);
 	fast_vector_Vertex vertices;
-	fast_vector_allocate(Vertex, vertices, totalIndices);
+	allocate_fast_vector_Vertex(&vertices, totalIndices);
 
 	size_t vertexOffset = 0;
 	size_t indexOffset = 0;
@@ -71,12 +71,12 @@ static inline Mesh loadMesh_fast(const char* path)
 	Mesh result;
 
 	fast_vector_u32 remap;
-	fast_vector_allocate(u32, remap, totalIndices);
+	allocate_fast_vector_u32(&remap, totalIndices);
 
 	size_t totalVertices = meshopt_generateVertexRemap(&remap.data[0], null, totalIndices, &vertices.data[0], totalIndices, sizeof(Vertex));
 	
-	fast_vector_allocate(u32, result.indices, totalIndices);
-	fast_vector_allocate(Vertex, result.vertices, totalVertices);
+	allocate_fast_vector_u32(&result.indices, totalIndices);
+	allocate_fast_vector_Vertex(&result.vertices, totalVertices);
 
 	meshopt_remapIndexBuffer(&result.indices.data[0], nullptr, totalIndices, &remap.data[0]);
 	meshopt_remapVertexBuffer(&result.vertices.data[0], &vertices.data[0], totalIndices, sizeof(Vertex), &remap.data[0]);

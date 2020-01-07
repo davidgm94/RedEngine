@@ -1,4 +1,7 @@
 #pragma once
+#if _WIN64
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
 #ifdef __cplusplus
 extern "C"
 {
@@ -132,11 +135,25 @@ extern "C"
         CRITICAL
     } RED_LOG_SEVERITY;
 
-#define FAST_VECTOR(type) typedef struct { type* data; size_t size; } fast_vector_##type
-    FAST_VECTOR(u32);
 #define fast_vector_malloc(type, count) (type*)malloc(sizeof(type) * count)
-#define fast_vector_allocate(type, name, count) name.data = fast_vector_malloc(type, count); name.size = count
-#define fast_vector_deallocate(name) free(name.data); name.data = null; name.size = 0
+#define fast_vector_free(pointer) free(pointer)
+#define FAST_VECTOR(type) typedef struct { type* data; size_t size; } fast_vector_##type;\
+    static inline void allocate_fast_vector_##type(fast_vector_##type* vector, size_t count)\
+    {\
+        vector->data = fast_vector_malloc(type, count);\
+        vector->size = count;\
+    }\
+    \
+    static inline void deallocate_fast_vector_##type(fast_vector_##type* vector, size_t count)\
+    {\
+        fast_vector_free(vector->data);\
+        vector->data = null;\
+        vector->size = 0;\
+    }
+#include <stdlib.h>
+    FAST_VECTOR(u32)
+//#define fast_vector_allocate(type, name, count) name.data = fast_vector_malloc(type, count); name.size = count
+// #define fast_vector_deallocate(name) free(name.data); name.data = null; name.size = 0
 
 #define SHOW_DEBUG 1
 #define SHOW_WARNING 1

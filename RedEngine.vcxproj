@@ -85,20 +85,23 @@
     <ClInclude Include="src\graphics\vulkan.h" />
     <ClInclude Include="src\os\linux\args.h" />
     <ClInclude Include="src\os\linux\timer.h" />
-    <ClInclude Include="src\os\red_linux.h" />
-    <ClInclude Include="src\os\red_win32.h" />
+    <ClInclude Include="src\os\red_allocator.h" />
+    <ClInclude Include="src\os\linux\red_linux.h" />
+    <ClInclude Include="src\os\red_os.h" />
+    <ClInclude Include="src\os\red_stdio.h" />
+    <ClInclude Include="src\os\red_task_scheduler.h" />
+    <ClInclude Include="src\os\red_time.h" />
+    <ClInclude Include="src\os\win32\red_win32.h" />
     <ClInclude Include="src\red_common.h" />
     <ClInclude Include="src\red_graphics.h" />
-    <ClInclude Include="src\red_os.h" />
-    <ClInclude Include="src\red_platform.h" />
+    <ClInclude Include="src\os\red_platform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\external\meshoptimizer\indexgenerator.h" />
     <ClCompile Include="src\external\volk\volk.c" />
-    <ClCompile Include="src\os\red_win32.c" />
+    <ClCompile Include="src\os\win32\red_win32.c" />
     <ClCompile Include="src\red_engine_linux.c" />
     <ClCompile Include="src\red_engine_win32.c" />
-    <ClCompile Include="src\red_platform.c" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
