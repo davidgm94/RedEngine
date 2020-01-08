@@ -82,7 +82,8 @@
     <ClInclude Include="src\graphics\d3d\d3dcommon.h" />
     <ClInclude Include="src\graphics\model.h" />
     <ClInclude Include="src\graphics\opengl.h" />
-    <ClInclude Include="src\graphics\vulkan.h" />
+    <ClInclude Include="src\graphics\red_graphics.h" />
+    <ClInclude Include="src\graphics\vulkan_core.h" />
     <ClInclude Include="src\os\linux\args.h" />
     <ClInclude Include="src\os\linux\timer.h" />
     <ClInclude Include="src\os\red_allocator.h" />
@@ -93,7 +94,7 @@
     <ClInclude Include="src\os\red_time.h" />
     <ClInclude Include="src\os\win32\red_win32.h" />
     <ClInclude Include="src\red_common.h" />
-    <ClInclude Include="src\red_graphics.h" />
+    <ClInclude Include="src\graphics\vulkan.h" />
     <ClInclude Include="src\os\red_platform.h" />
   </ItemGroup>
   <ItemGroup>

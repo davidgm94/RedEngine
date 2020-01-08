@@ -3,6 +3,7 @@
 #if _WIN64
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -15,6 +16,8 @@ extern "C"
 #endif
 #else
 #endif
+
+#define FORCE_INLINE 0
 
 #if _MSC_VER
 
@@ -63,22 +66,39 @@ extern "C"
 #define MEGABYTE (1024 * KILOBYTE)
 #define GIGABYTE (1024 * MEGABYTE)
 // ASSERT
+#include <assert.h>
 // ERROR				??
 // MATH					??
+#include <math.h>
 // SIGNAL
+#include <signal.h>
 // ALIGNMENT
 // VARIABLE ARGS
+#include <stdarg.h>
 // ATOMIC TYPES
 // BOOLEAN
+#include <stdbool.h>
 // STDDEF
+#include <stddef.h>
 	// OFFSETS: #define offsetof(s,m) ((size_t)&(((s*)0)->m))
 // STDIO
+#include <stdio.h>
 // STRING
+#include <string.h>
 // THREAD SYSTEM
 // TIME
 // MEMORY
+#include <stdlib.h>
 // WINDOW
+    typedef void* os_window;
+    struct os_window_list_entry
+    {
+        os_window window;
+        os_window_list_entry* next;
+    }; //os_window_list_entry;
 // WINDOW LOOP
+    bool os_windowShouldClose(os_window* window);
+    void os_windowHandleEvents(os_window* window);
 // SHELL
 // AUDIO
 // NETWORKING
@@ -113,8 +133,7 @@ extern "C"
         vector->size = 0;\
     }
 
-// TODO: update preprocessor names (not correct at the moment)
-
+    FAST_VECTOR(u32);
 typedef void* os_manager;
 static os_manager currentPlatform = null;
 
@@ -122,39 +141,17 @@ typedef struct
 {
     void* windowHandle;
     void* anotherOSHandle;
-} platform_dependencies;
+} os_handles;
 
 typedef struct
 {
 	u32 width;
 	u32 height;
-} engine_window;
+} os_window_dimensions;
 
-//#if _WIN64
-
-void os_startup(os_manager* os);
-
+void os_startup(void);
+os_handles os_getPlatformHandles(void);
+os_window_dimensions os_getWindowDimensions(void);
 #ifdef __cplusplus
 }
 #endif
-
-// #if 0
-// typedef struct
-// {
-// 	HINSTANCE instance;
-// 	HINSTANCE previousInstance;
-// 	PSTR commandLineArguments;
-// 	int showCommand;
-// } winmain_parameters;
-// 
-// static winmain_parameters winmainParameters;
-// 
-// static inline void fillWinmainParameters(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-// 	PSTR lpCmdLine, INT nCmdShow)
-// {
-// 	winmainParameters.instance = hInstance;
-// 	winmainParameters.previousInstance = hPrevInstance;
-// 	winmainParameters.commandLineArguments = lpCmdLine;
-// 	winmainParameters.showCommand = nCmdShow;
-// }
-// #endif

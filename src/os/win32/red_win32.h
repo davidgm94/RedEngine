@@ -37,6 +37,7 @@ typedef struct
 
 win32_application win32;
 void win32_startup(winmain_parameters* winmainArguments, const char* windowTitle, engine_window* window, win32_application* win32);
+
 inline PLATFORM_IS_RUNNING(platform_Running)
 {
 	win32_application_state* appState = platform;
