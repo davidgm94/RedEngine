@@ -1,5 +1,4 @@
-#include "../red_common.h"
-#include "../os/red_platform.h"
+#include "../os/red_os.h"
 #include <volk.h>
 #if NDEBUG
 #define VKCHECK(result) (result)
@@ -304,25 +303,15 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
 	return device;
 }
 
-typedef struct
-{
-#if _WIN64
-	HWND window;
-	HINSTANCE instance;
-#else
-#pragma error "OS not implemented yet"
-#endif
-} os_window_handler;
-
-static inline VkSurfaceKHR vk_createSurface(VkAllocationCallbacks* allocator, VkInstance instance, os_window_handler* window)
+static inline VkSurfaceKHR vk_createSurface(VkAllocationCallbacks* allocator, VkInstance instance, os_window_handles* window)
 {
 #if _WIN64
 	VkWin32SurfaceCreateInfoKHR createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.pNext = nullptr;
     createInfo.flags = 0;
-    createInfo.hinstance = window->instance;
-    createInfo.hwnd = window->window;
+    createInfo.hinstance = (HINSTANCE)window->anotherOSHandle;
+    createInfo.hwnd = (HWND)window->windowHandle;
 
 	VkSurfaceKHR surface;
 	VKCHECK(vkCreateWin32SurfaceKHR(instance, &createInfo, allocator, &surface));
@@ -621,7 +610,7 @@ static inline void vk_createCommandBuffers(VkDevice device, VkCommandPool comman
 
 	VkCommandBuffer commandBuffersLocal[commandBufferCount];
 	VKCHECK(vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, commandBuffersLocal));
-	platform_Memcpy(commandBufferArray, commandBuffersLocal, sizeof(VkCommandBuffer) * commandBufferCount);
+	os_memcpy(commandBufferArray, commandBuffersLocal, sizeof(VkCommandBuffer) * commandBufferCount);
 }
 
 static inline void vk_beginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferUsageFlags commandBufferUsage, VkRenderPass renderPass, u32 subpass, VkFramebuffer framebuffer, VkQueryPipelineStatisticFlags pipelineStatistics)
@@ -779,7 +768,7 @@ static inline void vk_synchronizeTwoCommandBuffers(VkSemaphore* semaphoreArray1,
 	// TODO: maybe these three lines are unnecessary? Remove if so.
 	u32 firstSignalSemaphoreCount = synchronizingSemaphoreCount;
 	VkSemaphore firstSignalSemaphoreArray[firstSignalSemaphoreCount];
-	platform_Memcpy(firstSignalSemaphoreArray, synchronizingSemaphoreArray, sizeof(VkSemaphore) * firstSignalSemaphoreCount);
+	os_memcpy(firstSignalSemaphoreArray, synchronizingSemaphoreArray, sizeof(VkSemaphore) * firstSignalSemaphoreCount);
 
 	vk_submitCommandsToQueue(semaphoreArray1, semaphoreArray1Count, pipelineStageArray1,
 		queue1, commandBufferArray1, commandBufferCount1,
@@ -1071,7 +1060,7 @@ static inline void vk_mapAndCopyMemoryToDevice(VkDevice device, VkDeviceMemory h
 	void* pointerToMemory;
 	// VkMemoryMapFlags memoryMapFlags = 0; // TODO: take a look at this in the future
 	VKCHECK(vkMapMemory(device, hostVisibleMemory, offset, dataSize, 0, &pointerToMemory));
-	platform_Memcpy(pointerToMemory, data, dataSize);
+	os_memcpy(pointerToMemory, data, dataSize);
 
 	VkMappedMemoryRange memoryRanges[] =
 	{
@@ -1974,7 +1963,7 @@ static inline void vk_setupQueueCreation(VkDeviceQueueCreateInfo* queueCreateInf
 	   queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_GRAPHICS];
 	   queueInfo.queueCount = 1;
 	   queueInfo.pQueuePriorities = defaultQueuePriorities;
-	   platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
+	   os_memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
     }
     else
     {
@@ -1995,7 +1984,7 @@ static inline void vk_setupQueueCreation(VkDeviceQueueCreateInfo* queueCreateInf
 		  queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_COMPUTE];
 		  queueInfo.queueCount = 1;
 		  queueInfo.pQueuePriorities = defaultQueuePriorities;
-		  platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
+		  os_memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
 	   }
     }
     else
@@ -2018,7 +2007,7 @@ static inline void vk_setupQueueCreation(VkDeviceQueueCreateInfo* queueCreateInf
 		  queueInfo.queueFamilyIndex = queueFamily->indices[VULKAN_QUEUE_FAMILY_INDEX_TRANSFER];
 		  queueInfo.queueCount = 1;
 		  queueInfo.pQueuePriorities = defaultQueuePriorities;
-		  platform_Memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
+		  os_memcpy(&queueCreateInfoArray[currentIndex++], &queueInfo, sizeof(queueInfo));
 	   }
     }
     else

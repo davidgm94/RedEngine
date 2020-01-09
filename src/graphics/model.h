@@ -1,5 +1,6 @@
-#include "../red_common.h"
+#include "../os/red_os.h"
 #include <indexgenerator.h>
+#include <fast_obj.h>
 typedef struct
 {
 	float vx, vy, vz;
@@ -14,7 +15,6 @@ typedef struct
 	fast_vector_Vertex vertices;
 	fast_vector_u32 indices;
 } Mesh;
-#include <fast_obj.h>
 
 static inline Mesh loadMesh_fast(const char* path)
 {

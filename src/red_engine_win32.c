@@ -1,6 +1,6 @@
 #if _WIN64
-#include "os/red_platform.h"
-#include "red_graphics.h"
+#include "os/red_os.h"
+#include "graphics/red_graphics.h"
 
 #define WINDOW_TITLE "Red Engine"
 #define WINDOW_WIDTH 1024
@@ -21,33 +21,24 @@ int main()
 {
 #if _WIN64
 	winmain_parameters winmainParameters = { .instance = hInstance, . previousInstance = hPrevInstance, .commandLineArguments = lpCmdLine, .showCommand = nCmdShow };
-	platform_dependencies vulkan_dependencies = { .windowHandle = win32.handles.window, .anotherOSHandle = win32.handles.winmainArguments.instance };
+	win32.handles.winmainArguments = winmainParameters;
 #endif
-	engine_window initialResolution = { initialWidth, initialHeight };
+	os_window_dimensions initialResolution = { initialWidth, initialHeight };
 	//os_startup();
-	win32_startup(&winmainParameters, WINDOW_TITLE, &initialResolution, &win32);
+	// TODO: this should be recalled window startup?? refactor or rename
+	currentWindow = os_startup(WINDOW_TITLE, &initialResolution);
+	os_window_handles windowHandles = os_getWindowHandles(currentWindow);
 
 	// graphics_load();
 	vulkan_renderer vk;
-	// cross_platform_QPC
-	QPC(startVk);
-	vk_load(&vk, (os_window_handler*)&vulkan_dependencies, (os_window_dimension*)&initialResolution);
-	// cross_platform_QPC
-	QPC(endVk);
+	vk_load(&vk, &windowHandles, &initialResolution);
 
-	// cross_platform_QPC
-	os_printf("Vulkan initialized in %f ms.\n", (float)(endVk - startVk) / win32.timer.performanceFrequency);
-
-	// while (applicationRunning)
-	while (platform_Running(&win32.applicationState))
+	// TODO: multiWindow code?
+	while (!os_windowShouldClose(currentWindow))
 	{
-		//QPC(startFrame);
 		// graphics_render(); TODO: upgrade info
 		vk_render(&vk);
-		// os_handleEvents();
-		platform_HandleEvents(win32.handles.window);
-		//QPC(endFrame);
-		//os_printf("Frame time: %.02f ms.", (float)(endFrame - startFrame) / win32.timer.performanceFrequency);
+		os_windowHandleEvents(currentWindow);
 	}
 
 	// destroy_graphics();
@@ -169,4 +160,5 @@ int main()
 //	pushString("String 7");
 //}
 //#endif
+#endif
 #endif

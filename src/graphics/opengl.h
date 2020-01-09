@@ -1,5 +1,5 @@
 #pragma once
-#include "../os/red_platform.h"
+#include "../os/red_os.h"
 
 //void win32_initOpenGL(HWND window)
 //{

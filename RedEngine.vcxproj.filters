@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="src\red_common.h" />
     <ClInclude Include="src\graphics\opengl.h" />
     <ClInclude Include="src\graphics\d3d\d3d11.h" />
     <ClInclude Include="src\graphics\d3d\d3d12.h" />
@@ -10,13 +9,8 @@
     <ClInclude Include="src\os\linux\timer.h" />
     <ClInclude Include="src\external\meshoptimizer\fast_obj.h" />
     <ClInclude Include="src\graphics\model.h" />
-    <ClInclude Include="src\os\red_task_scheduler.h" />
-    <ClInclude Include="src\os\red_allocator.h" />
-    <ClInclude Include="src\os\red_time.h" />
-    <ClInclude Include="src\os\red_stdio.h" />
     <ClInclude Include="src\os\linux\red_linux.h" />
     <ClInclude Include="src\os\win32\red_win32.h" />
-    <ClInclude Include="src\os\red_platform.h" />
     <ClInclude Include="src\os\red_os.h" />
     <ClInclude Include="src\graphics\vulkan_core.h" />
     <ClInclude Include="src\graphics\vulkan.h" />

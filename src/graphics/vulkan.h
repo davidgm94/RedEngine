@@ -1,13 +1,13 @@
 #pragma once
-#include "../os/red_platform.h"
+#include "../os/red_os.h"
 #include "vulkan_core.h"
 
-void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension);
-void vk_loadModel(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension);
+void vk_loadTriangle(vulkan_renderer* vk, os_window_handles* window, os_window_dimensions* windowDimension);
+void vk_loadModel(vulkan_renderer* vk, os_window_handles* window, os_window_dimensions* windowDimension);
 void vk_renderTriangle(vulkan_renderer* vk);
 void vk_renderModel(vulkan_renderer* vk);
 
-static inline void vk_load(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension)
+static inline void vk_load(vulkan_renderer* vk, os_window_handles* window, os_window_dimensions* windowDimension)
 {
 	vk_loadModel(vk, window, windowDimension);
 }
@@ -138,7 +138,7 @@ static inline VkPipeline vk_createGraphicsPipeline(VkAllocationCallbacks* alloca
 	return pipeline;
 }
 
-void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension)
+void vk_loadTriangle(vulkan_renderer* vk, os_window_handles* window, os_window_dimensions* windowDimension)
 {
 	//vk->allocator = &vk->allocator_;
 	vk->allocator = null;
@@ -156,7 +156,7 @@ void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_d
     vk->debugCallback = vk_createDebugCallback(vk->allocator, vk->instance, debugCallbackFlags, vk_debugCallback);
 #endif
 	vk->physicalDevice = vk_pickPhysicalDevice(vk->instance);
-	vk->surface = vk_createSurface(nullptr, vk->instance, window);
+	vk->surface = vk_createSurface(vk->allocator, vk->instance, window);
     vk->extent = (VkExtent2D){ windowDimension->width, windowDimension->height };
     vk_fillSwapchainProperties(&vk->swapchainProperties, vk->physicalDevice, vk->surface);
     vk_fillSwapchainRequirements(&vk->swapchainRequirements, &vk->swapchainProperties, &vk->extent);
@@ -181,12 +181,12 @@ void vk_loadTriangle(vulkan_renderer* vk, os_window_handler* window, os_window_d
 	vk_createImageMemoryBarriers(vk->beginRenderBarriers, vk->swapchainImages, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	vk_createImageMemoryBarriers(vk->endRenderBarriers, vk->swapchainImages, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	raw_str vsFile = platform_readFile("src/graphics/traditionalPipeline/triangle.vert.spv");
-	raw_str fsFile = platform_readFile("src/graphics/traditionalPipeline/triangle.frag.spv");
-	vk->traditionalPipeline.vs = vk_createShaderModule(vk->allocator, vk->device, vsFile.c_str, vsFile.size);
-	vk->traditionalPipeline.fs = vk_createShaderModule(vk->allocator, vk->device, fsFile.c_str, fsFile.size);
-	free(vsFile.c_str);
-	free(fsFile.c_str);
+	raw_str vsFile = os_readFile("src/graphics/traditionalPipeline/triangle.vert.spv");
+	raw_str fsFile = os_readFile("src/graphics/traditionalPipeline/triangle.frag.spv");
+	vk->traditionalPipeline.vs = vk_createShaderModule(vk->allocator, vk->device, vsFile.data, vsFile.size);
+	vk->traditionalPipeline.fs = vk_createShaderModule(vk->allocator, vk->device, fsFile.data, fsFile.size);
+	free(vsFile.data);
+	free(fsFile.data);
 
 	VkPipelineCache pipelineCache = null;
 
@@ -263,7 +263,7 @@ void vk_renderTriangle(vulkan_renderer* vk)
 	VKCHECK(vkDeviceWaitIdle(vk->device));
 }
 
-void vk_loadModel(vulkan_renderer* vk, os_window_handler* window, os_window_dimension* windowDimension)
+void vk_loadModel(vulkan_renderer* vk, os_window_handles* window, os_window_dimensions* windowDimension)
 {
 	//vk->allocator = &vk->allocator_;
 	vk->allocator = null;
@@ -281,7 +281,7 @@ void vk_loadModel(vulkan_renderer* vk, os_window_handler* window, os_window_dime
     vk->debugCallback = vk_createDebugCallback(vk->allocator, vk->instance, debugCallbackFlags, vk_debugCallback);
 #endif
 	vk->physicalDevice = vk_pickPhysicalDevice(vk->instance);
-	vk->surface = vk_createSurface(nullptr, vk->instance, window);
+	vk->surface = vk_createSurface(vk->allocator, vk->instance, window);
     vk->extent = (VkExtent2D){ windowDimension->width, windowDimension->height };
     vk_fillSwapchainProperties(&vk->swapchainProperties, vk->physicalDevice, vk->surface);
     vk_fillSwapchainRequirements(&vk->swapchainRequirements, &vk->swapchainProperties, &vk->extent);
@@ -306,12 +306,12 @@ void vk_loadModel(vulkan_renderer* vk, os_window_handler* window, os_window_dime
 	vk_createImageMemoryBarriers(vk->beginRenderBarriers, vk->swapchainImages, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	vk_createImageMemoryBarriers(vk->endRenderBarriers, vk->swapchainImages, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-	raw_str vsFile = platform_readFile("src/graphics/shaders/model.vert.spv");
-	raw_str fsFile = platform_readFile("src/graphics/shaders/model.frag.spv");
-	vk->traditionalPipeline.vs = vk_createShaderModule(vk->allocator, vk->device, vsFile.c_str, vsFile.size);
-	vk->traditionalPipeline.fs = vk_createShaderModule(vk->allocator, vk->device, fsFile.c_str, fsFile.size);
-	free(vsFile.c_str);
-	free(fsFile.c_str);
+	raw_str vsFile = os_readFile("src/graphics/shaders/model.vert.spv");
+	raw_str fsFile = os_readFile("src/graphics/shaders/model.frag.spv");
+	vk->traditionalPipeline.vs = vk_createShaderModule(vk->allocator, vk->device, vsFile.data, vsFile.size);
+	vk->traditionalPipeline.fs = vk_createShaderModule(vk->allocator, vk->device, fsFile.data, fsFile.size);
+	free(vsFile.data);
+	free(fsFile.data);
 
 	VkPipelineCache pipelineCache = null;
 

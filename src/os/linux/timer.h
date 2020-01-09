@@ -1,10 +1,8 @@
 //
 // Created by david on 11/17/19.
 //
-
 #pragma once
-#include "red_common.h"
-#include <time.h>
+#if __linux__
 
 #define MILISECONDS_IN_ONE_SECOND 1000
 #define NANOSECONDS_IN_ONE_MILISECOND 1000000
@@ -35,3 +33,4 @@ static inline i64 timer_popNs(timer* timerToQuery)
     i64 nanoseconds = timerToQuery->value.tv_nsec + (timerToQuery->value.tv_sec * NANOSECONDS_IN_ONE_SECOND);
     return nanoseconds;
 }
+#endif

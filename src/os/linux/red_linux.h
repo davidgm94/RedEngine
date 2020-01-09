@@ -3,14 +3,7 @@
 //
 #if ___linux___
 #pragma once
-#include "red_common.h"
-#include "red_platform.h"
-#include <stdio.h>
-#include <time.h>
-#include "linux/args.h"
 
-#include <sys/mman.h>
-#include <signal.h>
 void platform_DebugBreak(void)
 {
     raise(SIGTRAP);
@@ -35,13 +28,11 @@ int platform_Sprintf(char* buffer, const char* format, ...)
     va_end(args);
     return result;
 }
-#include <string.h>
 void* platform_Memcpy(void* destination, void* source, size_t size)
 {
     return memcpy(destination, source, size);
 }
 
-#include <pthread.h>
 typedef enum {
    RESULT_ERROR,
    RESULT_SUCCESS
@@ -80,8 +71,6 @@ void logger(LOGGER_LEVEL loggerLevel, const char* tag, const char* message)
 {
     puts(message);
 }
-#include <math.h>
-#include "linux/timer.h"
 static inline struct timespec getUnixTimespec()
 {
     struct timespec ts;
