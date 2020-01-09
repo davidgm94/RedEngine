@@ -16,6 +16,22 @@ typedef struct
 	fast_vector_u32 indices;
 } Mesh;
 
+typedef struct
+{
+	u32 vertices[64];
+	u8 indices[126]; // up to 42 triangles
+	u8 triangleCount;
+	u8 vertexCount;
+} Meshlet;
+FAST_VECTOR(Meshlet);
+
+typedef struct
+{
+	fast_vector_Vertex vertices;
+	fast_vector_u32 indices;
+	fast_vector_Meshlet meshlets;
+} Mesh_with_meshlets;
+
 static inline Mesh loadMesh_fast(const char* path)
 {
 	fastObjMesh* obj = fast_obj_read(path);
