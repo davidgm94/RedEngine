@@ -15,13 +15,13 @@
     <ClInclude Include="src\graphics\vulkan_core.h" />
     <ClInclude Include="src\graphics\vulkan.h" />
     <ClInclude Include="src\graphics\red_graphics.h" />
+    <ClInclude Include="src\graphics\vulkan_triangle.h" />
+    <ClInclude Include="src\graphics\vulkan_model.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\red_engine_linux.c" />
-    <ClCompile Include="src\red_engine_win32.c" />
     <ClCompile Include="src\external\volk\volk.c" />
     <ClCompile Include="src\external\meshoptimizer\indexgenerator.h" />
-    <ClCompile Include="src\os\win32\red_win32.c" />
+    <ClCompile Include="src\red_engine.c" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -34,5 +34,6 @@
   <ItemGroup>
     <CustomBuild Include="src\graphics\shaders\model.vert" />
     <CustomBuild Include="src\graphics\shaders\model.frag" />
+    <CustomBuild Include="src\graphics\shaders\model.mesh" />
   </ItemGroup>
 </Project>

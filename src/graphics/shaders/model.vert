@@ -1,9 +1,13 @@
 #version 450
 
+#extension GL_EXT_shader_16bit_storage: require
+#extension GL_EXT_shader_8bit_storage: require
+#extension GL_EXT_shader_explicit_arithmetic_types: require
+#extension GL_EXT_shader_explicit_arithmetic_types_int8: require
 struct Vertex
 {
 	float vx, vy, vz;
-	float nx, ny, nz, nw;
+	uint8_t nx, ny, nz, nw;
 	float tu, tv;
 };
 

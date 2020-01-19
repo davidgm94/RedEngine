@@ -1,6 +1,8 @@
 #if _WIN64
 #include "os/red_os.h"
-#include "graphics/red_graphics.h"
+#include "os/win32/red_win32.h"
+#include "graphics/model.h"
+#include "graphics/vulkan.h"
 
 #define WINDOW_TITLE "Red Engine"
 #define WINDOW_WIDTH 1024
@@ -42,7 +44,6 @@ int main()
 	}
 
 	// destroy_graphics();
-	vk_destroy(&vk);
 	// destroy_os();
 	return 0;
 }

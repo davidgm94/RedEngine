@@ -53,6 +53,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)\src\external\meshoptimizer;$(SolutionDir)\src\external\glad\include;$(SolutionDir)src\external\volk</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -68,6 +69,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)\src\external\meshoptimizer;$(SolutionDir)\src\external\glad\include;$(SolutionDir)src\external\volk</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -84,6 +86,8 @@
     <ClInclude Include="src\graphics\opengl.h" />
     <ClInclude Include="src\graphics\red_graphics.h" />
     <ClInclude Include="src\graphics\vulkan_core.h" />
+    <ClInclude Include="src\graphics\vulkan_model.h" />
+    <ClInclude Include="src\graphics\vulkan_triangle.h" />
     <ClInclude Include="src\os\linux\args.h" />
     <ClInclude Include="src\os\linux\timer.h" />
     <ClInclude Include="src\os\linux\red_linux.h" />
@@ -94,9 +98,7 @@
   <ItemGroup>
     <ClCompile Include="src\external\meshoptimizer\indexgenerator.h" />
     <ClCompile Include="src\external\volk\volk.c" />
-    <ClCompile Include="src\os\win32\red_win32.c" />
-    <ClCompile Include="src\red_engine_linux.c" />
-    <ClCompile Include="src\red_engine_win32.c" />
+    <ClCompile Include="src\red_engine.c" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
@@ -120,6 +122,13 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).vert.spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="src\graphics\shaders\model.mesh">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).mesh.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).mesh.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe %(FullPath) -V -o $(ProjectDir)src/graphics/shaders/%(Filename).mesh.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/graphics/shaders/%(Filename).mesh.spv</Outputs>
     </CustomBuild>
     <None Include="src\graphics\shaders\triangle.frag" />
     <None Include="src\graphics\shaders\triangle.vert" />

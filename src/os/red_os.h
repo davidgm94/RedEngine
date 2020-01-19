@@ -36,7 +36,7 @@ extern "C"
 
 #endif
 
-#define ArrayCount(array) (sizeof(array) / sizeof(array[0]))
+#define ARRAYCOUNT(arr) (sizeof(arr) / sizeof(arr[0]))
 
 // BOOLEAN
 #ifndef __cplusplus
@@ -129,12 +129,12 @@ extern "C"
 	// TODO: Does this work?
 	static inline int os_printf(const char* format, ...)
 	{
-		int _Result;
-		va_list _ArgList;
-		va_start(_ArgList, format);
-		_Result = __stdio_common_vfprintf(_CRT_INTERNAL_LOCAL_PRINTF_OPTIONS, stdout, format, NULL, _ArgList);
-		va_end(_ArgList);
-		return _Result;
+		int result;
+		va_list args;
+		va_start(args, format);
+		result = vfprintf(stdout, format, args);
+		va_end(args);
+		return result;
 	}
 	static inline int os_sprintf(char* buffer, const char* format, ...)
 	{
@@ -262,6 +262,7 @@ extern "C"
     }
 
     FAST_VECTOR(u32);
+	FAST_VECTOR(u8);
 	FAST_VECTOR(char);
 	typedef fast_vector_char raw_str;
 
@@ -509,10 +510,4 @@ os_window_handles os_getWindowHandles(os_window_application_pointer windowApplic
 os_window_dimensions os_getWindowDimensions(os_window_application_pointer windowApplication);
 #ifdef __cplusplus
 }
-#endif
-
-#if _WIN64
-#include "win32/red_win32.h"
-#elif __linux__
-#include "linux/red_linux.h"
 #endif

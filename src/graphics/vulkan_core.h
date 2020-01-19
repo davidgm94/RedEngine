@@ -1,4 +1,5 @@
-#include "../os/red_os.h"
+#define NV_RTX 0
+#define NV_MESH_SHADING 1
 #include <volk.h>
 #if NDEBUG
 #define VKCHECK(result) (result)
@@ -17,8 +18,6 @@ enum Vk_QueueFamilyIndex
     VULKAN_QUEUE_FAMILY_INDEX_COMPUTE,
     VULKAN_QUEUE_FAMILY_INDEX_TRANSFER,
 };
-
-#define ARRAYCOUNT(arr) sizeof(arr)/sizeof(arr[0])
 
 static inline VkInstance vk_createInstance(VkAllocationCallbacks* allocator)
 {
@@ -271,6 +270,9 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
 		VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 		VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
 		VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
+#if NV_MESH_SHADING
+		VK_NV_MESH_SHADER_EXTENSION_NAME,
+#endif
 	};
 
 
@@ -281,6 +283,18 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
 
 	VkPhysicalDevice8BitStorageFeaturesKHR features8 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR };
 	features8.storageBuffer8BitAccess = true;
+	features8.uniformAndStorageBuffer8BitAccess = true;
+
+	// VkPhysicalDeviceShaderFloat16Int8FeaturesKHR featuresShaderfp16int8 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR };
+	// featuresfp16int8.shaderInt8 = true;
+	VkPhysicalDeviceFloat16Int8FeaturesKHR featuresfp16int8 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT16_INT8_FEATURES_KHR };
+	featuresfp16int8.shaderInt8 = true;
+
+	
+#if NV_MESH_SHADING
+	VkPhysicalDeviceMeshShaderFeaturesNV featuresMesh = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV };
+	featuresMesh.meshShader = true;
+#endif
 
 	VkDeviceCreateInfo createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -295,7 +309,13 @@ static inline VkDevice vk_createDevice(VkAllocationCallbacks* allocator, VkPhysi
     createInfo.pEnabledFeatures = null;
 	features.pNext = &features16;
 	features16.pNext = &features8;
-	features8.pNext = null;
+	features8.pNext = &featuresfp16int8;
+#if NV_MESH_SHADING
+	featuresfp16int8.pNext = &featuresMesh;
+	featuresMesh.pNext = null;
+#else
+	featuresfp16int8.pNext = null;
+#endif
 	
 	VkDevice device;
 	VKCHECK(vkCreateDevice(physicalDevice, &createInfo, allocator, &device));
@@ -1371,6 +1391,16 @@ static inline VulkanBufferWithData vk_createIndexBuffer(VkAllocationCallbacks* a
 	return (VulkanBufferWithData) { buffer, memory, null, size };
 }
 
+static inline VulkanBufferWithData vk_createStorageBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+	VkDeviceSize size, VkBufferUsageFlags usage,
+	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
+{
+	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, physicalDeviceMemoryProperties);
+
+	return (VulkanBufferWithData) { buffer, memory, null, size };
+}
+
 static inline VulkanBufferNoView vk_createUniformBuffer(VkAllocationCallbacks* allocator, VkDevice device,
 	VkDeviceSize size, VkBufferUsageFlags usage,
 	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
@@ -1381,15 +1411,15 @@ static inline VulkanBufferNoView vk_createUniformBuffer(VkAllocationCallbacks* a
 	return (VulkanBufferNoView) { buffer, memory };
 }
 
-static inline VulkanBufferNoView vk_createStorageBuffer(VkAllocationCallbacks* allocator, VkDevice device,
-	VkDeviceSize size, VkBufferUsageFlags usage,
-	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
-{
-	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
-
-	return (VulkanBufferNoView) { buffer, memory };
-}
+// static inline VulkanBufferNoView vk_createStorageBuffer(VkAllocationCallbacks* allocator, VkDevice device,
+// 	VkDeviceSize size, VkBufferUsageFlags usage,
+// 	VkPhysicalDeviceMemoryProperties* physicalDeviceMemoryProperties)
+// {
+// 	VkBuffer buffer = vk_createBuffer(allocator, device, size, usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+// 	VkDeviceMemory memory = vk_allocateAndBindToBuffer(allocator, device, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDeviceMemoryProperties);
+// 
+// 	return (VulkanBufferNoView) { buffer, memory };
+// }
 
 static inline VulkanImage vk_createInputAttachment(VkAllocationCallbacks* allocator, VkDevice device,
 	VkImageType type, VkFormat format, VkExtent3D* extent, u32 mipmapLevelCount, u32 layerCount, VkImageUsageFlags usage,
@@ -1538,7 +1568,6 @@ static inline void vk_createFramebuffers(VkAllocationCallbacks* allocator, VkDev
 		swapchainFramebuffers[i] = vk_createFramebuffer(allocator, device, renderPass, &attachments[i], 1, extent, 1);
 	}
 }
-
 
 static inline VkRenderPass vk_prepareRenderPassForGeometryRenderingAndPostprocessingSubpasses(VkAllocationCallbacks* allocator, VkDevice device)
 {
@@ -2023,37 +2052,200 @@ typedef struct
 	VulkanBufferWithData vb;
 	VulkanBufferWithData ib;
 } VulkanTraditionalPipeline;
+
 typedef struct
 {
-	// TODO: temporary patch
-    VkAllocationCallbacks* allocator;
-	VkAllocationCallbacks allocator_;
-    VkInstance instance;
-#if _DEBUG
-    VkDebugReportCallbackEXT debugCallback;
-#endif
-    swapchain_properties swapchainProperties;
-    swapchain_requirements swapchainRequirements;
-    VkPhysicalDevice physicalDevice;
-    VkDevice device;
-	VkQueue queues[QUEUE_FAMILY_INDEX_COUNT];
-    VkSurfaceKHR surface;
-    VkSwapchainKHR swapchain;
-	VkImage swapchainImages[IMAGE_COUNT];
-	VkImageView swapchainImageViews[IMAGE_COUNT];
-	VkFramebuffer swapchainFramebuffers[IMAGE_COUNT];
-	VkImageMemoryBarrier beginRenderBarriers[IMAGE_COUNT];
-	VkImageMemoryBarrier endRenderBarriers[IMAGE_COUNT];
-	VulkanTraditionalPipeline traditionalPipeline;
-	VkRenderPass renderPass;
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkPipelineLayout graphicsPipelineLayout;
-	VkPipeline graphicsPipeline;
-	VkCommandPool commandPools[QUEUE_FAMILY_INDEX_COUNT];
-	VkCommandBuffer commandBuffers[IMAGE_COUNT];
-	VkSemaphore imageAcquireSemaphore;
-	VkSemaphore imageReleaseSemaphore;
-	VkExtent2D extent;
-	Mesh currentMesh;
-} vulkan_renderer;
+	VkShaderModule vs;
+	VkShaderModule ts;
+	VkShaderModule ms;
+	VkShaderModule fs;
+	VulkanBufferWithData vb;
+	VulkanBufferWithData ib;
+	VulkanBufferWithData mb;
+} VulkanMeshPipeline;
 
+
+// TODO: modify
+static inline VkRenderPass vk_setupRenderPass(VkAllocationCallbacks* allocator, VkDevice device,
+	VkFormat format)
+{
+	VkAttachmentDescription attachments[1] = {};
+	attachments[0].format = format;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference colorAttachments = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+
+	VkSubpassDescription subpass;
+	subpass.flags = 0;
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.inputAttachmentCount = 0;
+    subpass.pInputAttachments = null;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachments;
+    subpass.pResolveAttachments = 0;
+	subpass.pDepthStencilAttachment = null;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pPreserveAttachments = null;
+
+	VkRenderPass renderPass = vk_createRenderPass(allocator, device, attachments, ARRAYCOUNT(attachments), null, 0, &subpass, 1);
+
+	return renderPass;
+}
+
+static inline VkPipeline vk_createGraphicsPipeline(VkAllocationCallbacks* allocator, VkDevice device, VkPipelineCache pipelineCache, VkRenderPass renderPass, VkShaderModule vs, VkShaderModule fs, VkPipelineLayout layout)
+{
+	VkGraphicsPipelineCreateInfo createInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+
+	VkPipelineShaderStageCreateInfo stages[2] = {0};
+	stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+	stages[0].module = vs;
+	stages[0].pName = "main";
+	stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	stages[1].module = fs;
+	stages[1].pName = "main";
+
+	createInfo.stageCount = sizeof(stages) / sizeof(stages[0]);
+	createInfo.pStages = stages;
+
+	VkPipelineVertexInputStateCreateInfo vertexInput = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+	createInfo.pVertexInputState = &vertexInput;
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	createInfo.pInputAssemblyState = &inputAssembly;
+
+	VkPipelineViewportStateCreateInfo viewportState = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+	viewportState.viewportCount = 1;
+	viewportState.scissorCount = 1;
+	createInfo.pViewportState = &viewportState;
+
+	VkPipelineRasterizationStateCreateInfo rasterizationState = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+	rasterizationState.lineWidth = 1.f;
+	createInfo.pRasterizationState = &rasterizationState;
+
+	VkPipelineMultisampleStateCreateInfo multisampleState = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+	multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	createInfo.pMultisampleState = &multisampleState;
+
+	VkPipelineDepthStencilStateCreateInfo depthStencilState = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+	createInfo.pDepthStencilState = &depthStencilState;
+
+	VkPipelineColorBlendAttachmentState colorAttachmentState = {0};
+	colorAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+	VkPipelineColorBlendStateCreateInfo colorBlendState = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+	colorBlendState.attachmentCount = 1;
+	colorBlendState.pAttachments = &colorAttachmentState;
+	createInfo.pColorBlendState = &colorBlendState;
+
+	VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+	VkPipelineDynamicStateCreateInfo dynamicState = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+	dynamicState.dynamicStateCount = sizeof(dynamicStates) / sizeof(dynamicStates[0]);
+	dynamicState.pDynamicStates = dynamicStates;
+	createInfo.pDynamicState = &dynamicState;
+
+	createInfo.layout = layout;
+	createInfo.renderPass = renderPass;
+
+	VkPipeline pipeline = 0;
+	VKCHECK(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, allocator, &pipeline));
+
+	return pipeline;
+}
+
+static inline VkPipeline vk_createMeshGraphicsPipeline(VkAllocationCallbacks* allocator, VkDevice device, VkPipelineCache pipelineCache, VkRenderPass renderPass, VkShaderModule vsOrMs, VkShaderModule fs, VkPipelineLayout layout)
+{
+	VkGraphicsPipelineCreateInfo createInfo = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+
+	VkPipelineShaderStageCreateInfo stages[2] = {0};
+	stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+#if NV_MESH_SHADING
+	stages[0].stage = VK_SHADER_STAGE_MESH_BIT_NV;
+#else
+	stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+#endif
+
+	stages[0].module = vsOrMs;
+	stages[0].pName = "main";
+	stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	stages[1].module = fs;
+	stages[1].pName = "main";
+
+	createInfo.stageCount = sizeof(stages) / sizeof(stages[0]);
+	createInfo.pStages = stages;
+
+	VkPipelineVertexInputStateCreateInfo vertexInput = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+	createInfo.pVertexInputState = &vertexInput;
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	createInfo.pInputAssemblyState = &inputAssembly;
+
+	VkPipelineViewportStateCreateInfo viewportState = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+	viewportState.viewportCount = 1;
+	viewportState.scissorCount = 1;
+	createInfo.pViewportState = &viewportState;
+
+	VkPipelineRasterizationStateCreateInfo rasterizationState = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+	rasterizationState.lineWidth = 1.f;
+	rasterizationState.cullMode = VK_CULL_MODE_BACK_BIT;
+	createInfo.pRasterizationState = &rasterizationState;
+
+	VkPipelineMultisampleStateCreateInfo multisampleState = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+	multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	createInfo.pMultisampleState = &multisampleState;
+
+	VkPipelineDepthStencilStateCreateInfo depthStencilState = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+	createInfo.pDepthStencilState = &depthStencilState;
+
+	VkPipelineColorBlendAttachmentState colorAttachmentState = {0};
+	colorAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+	VkPipelineColorBlendStateCreateInfo colorBlendState = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+	colorBlendState.attachmentCount = 1;
+	colorBlendState.pAttachments = &colorAttachmentState;
+	createInfo.pColorBlendState = &colorBlendState;
+
+	VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+	VkPipelineDynamicStateCreateInfo dynamicState = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+	dynamicState.dynamicStateCount = sizeof(dynamicStates) / sizeof(dynamicStates[0]);
+	dynamicState.pDynamicStates = dynamicStates;
+	createInfo.pDynamicState = &dynamicState;
+
+	createInfo.layout = layout;
+	createInfo.renderPass = renderPass;
+
+	VkPipeline pipeline = 0;
+	VKCHECK(vkCreateGraphicsPipelines(device, pipelineCache, 1, &createInfo, allocator, &pipeline));
+
+	return pipeline;
+}
+
+static inline VkQueryPool vk_createTimestampQueryPool(VkAllocationCallbacks* allocator, VkDevice device, u32 queryCount)
+{
+	VkQueryPoolCreateInfo createInfo;
+    createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    createInfo.pNext = null;
+    createInfo.flags = 0;
+    createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    createInfo.queryCount = queryCount;
+	createInfo.pipelineStatistics = 0;
+
+	VkQueryPool queryPool;
+	VKCHECK(vkCreateQueryPool(device, &createInfo, allocator, &queryPool));
+
+	return queryPool;
+
+}
